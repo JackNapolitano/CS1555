@@ -8,8 +8,14 @@ Create DB from .sql file (jack is working on that right now) 11/16/2015, 12:23 P
 Model of current DB
 ![alt tag](https://raw.githubusercontent.com/Jnapp18/CS1555/master/DatabaseModel.JPG?token=AGhooTSjfUBX7WhtYHmujauWuH02RYE3ks5WU10twA%3D%3D)
 
+IMPORTANT:
+The .sql script does not currently set the proper attribute types. This needs to be fixed.
+
 To-Do
 -------
+Need to verify correctness of .sql file.
+*Need to set the proper attribute types for the DB*
+
 Generate Data for DB from java file. (Nick/Jack)
 
 Java file to connect to DB, Jess has skeleton of that.
