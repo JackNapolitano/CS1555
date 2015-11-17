@@ -93,7 +93,7 @@ public class GroceryDeliveryDB {
         String city;
         String state;
         int zipcode;
-        double taxrate;
+        int taxrate; //this is sales tax, I changed it to an int, doesn't need to be a double
         double ytdSalesSum;
         for(int x = 0; x < numDataToGen; x++) {
             //generate the data. I picked 7 as the length for the strings for no reason.
@@ -104,7 +104,7 @@ public class GroceryDeliveryDB {
             state = generateString(2);
             state.toUpperCase();
             zipcode = rand.nextInt(90000) + 10000; //generates a zipcode from 10000-99999
-            taxrate = rand.nextDouble(); //I don't know how to paramaterize this
+            taxrate = rand.nextInt(8) + 1; //generates a taxrate from 1% to 8%
             ytdSalesSum = rand.nextDouble(); //We should build a method to just give an integer plus decimal places. This only does values 0.0-1.0
             //do a sql insert here using the JDBC
             statement.executeUpdate("INSERT INTO Warehouse VALUES (wh_ID, wh_Name, street_Address, city, state, zipcode, taxrate, ytdSalesSum)");
