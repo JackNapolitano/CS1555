@@ -11,7 +11,6 @@
 * To compile use
 * $> javac GroceryDeliveryDB.java
 **/
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -19,14 +18,14 @@ import java.sql.*;
 import java.text.ParseException;
 import java.sql.Date;
 import java.util.Scanner;
+import java.util.Random;
 public class GroceryDeliveryDB {
     private static Connection connection;
     private Statement statement;
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
     private String query;
-    
-    public static void main(String[] args) throws SQLException, ClassNotFoundException {
+   	public static void main(String[] args) throws SQLException, ClassNotFoundException {
        
         String username = "jon18";
         String password = "3676118";
@@ -86,56 +85,144 @@ public class GroceryDeliveryDB {
         GenStockData(numDataToGen);	
     }
     public static void GenWarehouseData(int numDataToGen) {
-        int wh_ID = 1;
-        String wh_Name = "adfljh";
-        String street_Address = "123 asc rd";
-        String city = "Victor";
-        String state = "NY";
-        int zipcode = 14564;
-        double taxrate = 0;
-        double ytdSalesSum = 0;
+    //Should I initialize Strings with "" and then concat instead of assign?
+        Random rand = new Random();
+        int wh_ID;
+        String wh_Name;
+        String street_Address;
+        String city;
+        String state;
+        int zipcode;
+        double taxrate;
+        double ytdSalesSum;
         for(int x = 0; x < numDataToGen; x++) {
-            //generate the data
+            //generate the data. I picked 7 as the length for the strings for no reason.
+            wh_ID = x+1;
+            wh_Name = generateString(7);
+            street_Address = alphaNumString();
+            city = generateString(7);
+            state = generateString(2);
+            state.toUpperCase();
+            zipcode = rand.nextInt(90000) + 10000; //generates a zipcode from 10000-99999
+            taxrate = rand.nextDouble(); //I don't know how to paramaterize this
+            ytdSalesSum = rand.nextDouble(); //We should build a method to just give an integer plus decimal places. This only does values 0.0-1.0
             //do a sql insert here using the JDBC
-            System.out.println("WH_ID: "+ wh_ID+ "\nWarehouse_Name: "+ wh_Name+ "\nStreet_Address: "+ street_Address+ "\nCity: "+ city+ "\nState: "+ state + "\nZipcode: "+ zipcode + "\nTax Rate:" + taxrate+ "\nYTD_Sales_Sum: " +ytdSalesSum);
+            statement.executeUpdate("INSERT INTO Warehouse VALUES (wh_ID, wh_Name, street_Address, city, state, zipcode, taxrate, ytdSalesSum)");
+            //System.out.println("WH_ID: "+ wh_ID+ "\nWarehouse_Name: "+ wh_Name+ "\nStreet_Address: "+ street_Address+ "\nCity: "+ city+ "\nState: "+ state + "\nZipcode: "+ zipcode + "\nTax Rate:" + taxrate+ "\nYTD_Sales_Sum: " +ytdSalesSum);
         }
     }
     public static void GenDistStationData(int numDataToGen) {
-        for(int x = 0; x < numDataToGen; x++) {
+    	int wh_ID;
+    	int ds_ID;
+    	String ds_Name = "";
+    	String street_Address = "";
+    	String city = "";
+    	String state = "";
+    	int zipcode;
+    	double taxrate;
+    	double ytdSalesSum;
+    	for(int x = 0; x < numDataToGen; x++) {
             //generate the data
             //do a sql insert here using the JDBC
         }
     }
     public static void GenCustomerData(int numDataToGen) {
+        int wh_ID;
+    	int ds_ID;
+    	int cust_ID;
+    	String first_Name = "";
+    	String middle_init = "";
+    	String last_Name = "";
+    	String street_Address = "";
+    	String city = "";
+    	String state = "";
+    	int zipcode;
+    	int phone_Num;
+    	//int signup_Date;
+    	//double active_discount;
+    	int debt;
+    	int ytdPurchaseTotal;
+    	int num_payments;
+    	int num_deliveries;
         for(int x = 0; x < numDataToGen; x++) {
             //generate the data
             //do a sql insert here using the JDBC
         }
     }
     public static void GenOrderData(int numDataToGen) {
-        for(int x = 0; x < numDataToGen; x++) {
+       	int ds_ID;
+    	int cust_ID;
+    	int order_ID;
+    	//int date_Placed;
+    	//String completed_Flag;
+    	int num_Items;
+       	for(int x = 0; x < numDataToGen; x++) {
             //generate the data
             //do a sql insert here using the JDBC
         }
     }
     public static void GenLineItemData(int numDataToGen) {
+        int cust_ID;
+    	int order_ID;
+    	int li_ID;
+    	int item_ID;
+    	int quantity;
+    	int total_Cost;
+    	//int date_Delivered;
         for(int x = 0; x < numDataToGen; x++) {
             //generate the data
             //do a sql insert here using the JDBC
         }
     }
     public static void GenItemData(int numDataToGen) {
+        int item_ID;
+        String item_Name = "";
+        int price;
         for(int x = 0; x < numDataToGen; x++) {
             //generate the data
             //do a sql insert here using the JDBC
         }
     }
     public static void GenStockData(int numDataToGen) {
+        int wh_ID;
+        int item_ID;
+        int quantity_avail;
+        int quantity_sold;
+        int num_orders;
         for(int x = 0; x < numDataToGen; x++) {
             //generate the data
             //do a sql insert here using the JDBC
         }
     }
+    //This will generate a random string of characters
+    public static String generateString(int length)
+	{
+		String characters = "abcdefghijklmnopqrstuvwxyz";
+		Random rng = new Random();
+    	char[] text = new char[length];
+    	for (int i = 0; i < length; i++)
+    	{
+        	text[i] = characters.charAt(rng.nextInt(characters.length()));
+    	}
+    	return new String(text);
+	}
+	//This will generate alpha-numeric string for address
+	//Double check if that's how to append a space
+	public static String alphaNumString()
+	{
+		StringBuilder temp = new StringBuilder;
+		temp.append(rng.nextInt(999));
+		temp.append(" ");
+		temp.append(generateString(7));
+		if (rng.nextInt(3) == 0)
+			temp.append(" Rd.");
+		else if (rng.nextInt(3) == 1)
+			temp.append(" St.");
+		else
+			temp.append(" Ave.");
+			
+		return new String(temp);
+	}
     /* This will list all tables in the database, not just our workspace.
      * public static void viewDB() throws SQLException{
     	System.out.println("Showing all tables...");
