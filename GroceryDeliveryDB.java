@@ -88,30 +88,32 @@ public class GroceryDeliveryDB {
     //Should I initialize Strings with "" and then concat instead of assign?
         Random rand = new Random();
         int wh_ID;
-        String wh_Name;
-        String street_Address;
-        String city;
-        String state;
+        String wh_Name = "";
+        String street_Address = "";
+        String city = "";
+        String state= "";
         int zipcode;
         int taxrate; //this is sales tax, I changed it to an int, doesn't need to be a double
-        double ytdSalesSum;
+        int ytdSalesSum; //Making this an int for now as well, we don't need to be that specific yet
         for(int x = 0; x < numDataToGen; x++) {
             //generate the data. I picked 7 as the length for the strings for no reason.
             wh_ID = x+1;
-            wh_Name = generateString(7);
-            street_Address = alphaNumString();
-            city = generateString(7);
-            state = generateString(2);
+            wh_Name += generateString(7);
+            street_Address += alphaNumString();
+            city += generateString(7);
+            state += generateString(2);
             state.toUpperCase();
             zipcode = rand.nextInt(90000) + 10000; //generates a zipcode from 10000-99999
             taxrate = rand.nextInt(8) + 1; //generates a taxrate from 1% to 8%
-            ytdSalesSum = rand.nextDouble(); //We should build a method to just give an integer plus decimal places. This only does values 0.0-1.0
+            ytdSalesSum = rand.nextInt(90000) + 1000; //We should build a method to just give an integer plus decimal places. This only does values 0.0-1.0
             //do a sql insert here using the JDBC
+            statement = connection.createStatement();
             statement.executeUpdate("INSERT INTO Warehouse VALUES (wh_ID, wh_Name, street_Address, city, state, zipcode, taxrate, ytdSalesSum)");
             //System.out.println("WH_ID: "+ wh_ID+ "\nWarehouse_Name: "+ wh_Name+ "\nStreet_Address: "+ street_Address+ "\nCity: "+ city+ "\nState: "+ state + "\nZipcode: "+ zipcode + "\nTax Rate:" + taxrate+ "\nYTD_Sales_Sum: " +ytdSalesSum);
         }
     }
     public static void GenDistStationData(int numDataToGen) {
+    	Random rand = new Random();
     	int wh_ID;
     	int ds_ID;
     	String ds_Name = "";
@@ -123,7 +125,19 @@ public class GroceryDeliveryDB {
     	double ytdSalesSum;
     	for(int x = 0; x < numDataToGen; x++) {
             //generate the data
+            wh_ID = x+1; //In dealing with PK's and FK's, I assume we'll need a way to sync these for each table i.e. wh_ID's should match up
+            ds_ID = x+2; //^^same as above, what should these really be?
+            ds_Name += generateString(7);
+            street_Address += alphaNumString();
+            city += generateString(7);
+            state += generateString(2);
+            state.toUpperCase();
+            zipcode = rand.nextInt(90000) + 10000; //generates a zipcode from 10000-99999
+            taxrate = rand.nextInt(8) + 1; //generates a taxrate from 1% to 8%
+            ytdSalesSum = rand.nextInt(90000) + 1000;
             //do a sql insert here using the JDBC
+            statement = connection.createStatement();
+            statement.executeUpdate("INSERT INTO Warehouse VALUES (wh_ID, ds_ID ds_Name, street_Address, city, state, zipcode, taxrate, ytdSalesSum)");
         }
     }
     public static void GenCustomerData(int numDataToGen) {
