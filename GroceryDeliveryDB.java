@@ -121,8 +121,8 @@ public class GroceryDeliveryDB {
     	String city = "";
     	String state = "";
     	int zipcode;
-    	double taxrate;
-    	double ytdSalesSum;
+    	int taxrate;
+    	int ytdSalesSum;
     	for(int x = 0; x < numDataToGen; x++) {
             //generate the data
             wh_ID = x+1; //In dealing with PK's and FK's, I assume we'll need a way to sync these for each table i.e. wh_ID's should match up
@@ -137,10 +137,11 @@ public class GroceryDeliveryDB {
             ytdSalesSum = rand.nextInt(90000) + 1000;
             //do a sql insert here using the JDBC
             statement = connection.createStatement();
-            statement.executeUpdate("INSERT INTO Warehouse VALUES (wh_ID, ds_ID ds_Name, street_Address, city, state, zipcode, taxrate, ytdSalesSum)");
+            statement.executeUpdate("INSERT INTO DistStation VALUES (wh_ID, ds_ID ds_Name, street_Address, city, state, zipcode, taxrate, ytdSalesSum)");
         }
     }
     public static void GenCustomerData(int numDataToGen) {
+    	Random rand = new Random();
         int wh_ID;
     	int ds_ID;
     	int cust_ID;
@@ -152,7 +153,7 @@ public class GroceryDeliveryDB {
     	String state = "";
     	int zipcode;
     	int phone_Num;
-    	//int signup_Date;
+    	int signup_Date;
     	//double active_discount;
     	int debt;
     	int ytdPurchaseTotal;
@@ -164,6 +165,7 @@ public class GroceryDeliveryDB {
         }
     }
     public static void GenOrderData(int numDataToGen) {
+    	Random rand = new Random();
        	int ds_ID;
     	int cust_ID;
     	int order_ID;
@@ -176,6 +178,7 @@ public class GroceryDeliveryDB {
         }
     }
     public static void GenLineItemData(int numDataToGen) {
+    	Random rand = new Random();
         int cust_ID;
     	int order_ID;
     	int li_ID;
@@ -189,6 +192,7 @@ public class GroceryDeliveryDB {
         }
     }
     public static void GenItemData(int numDataToGen) {
+    	Random rand = new Random();
         int item_ID;
         String item_Name = "";
         int price;
@@ -198,6 +202,7 @@ public class GroceryDeliveryDB {
         }
     }
     public static void GenStockData(int numDataToGen) {
+    	Random rand = new Random();
         int wh_ID;
         int item_ID;
         int quantity_avail;
@@ -213,29 +218,79 @@ public class GroceryDeliveryDB {
 	{
 		String characters = "abcdefghijklmnopqrstuvwxyz";
 		Random rng = new Random();
-    	char[] text = new char[length];
-    	for (int i = 0; i < length; i++)
-    	{
-        	text[i] = characters.charAt(rng.nextInt(characters.length()));
-    	}
-    	return new String(text);
+    		char[] text = new char[length];
+    		for (int i = 0; i < length; i++)
+    		{
+        		text[i] = characters.charAt(rng.nextInt(characters.length()));
+    		}
+    		return new String(text);
 	}
 	//This will generate alpha-numeric string for address
 	//Double check if that's how to append a space
 	public static String alphaNumString()
 	{
 		StringBuilder temp = new StringBuilder;
+		Random rng = new Random();
 		temp.append(rng.nextInt(999));
 		temp.append(" ");
 		temp.append(generateString(7));
 		if (rng.nextInt(3) == 0)
+		{
 			temp.append(" Rd.");
+		}
 		else if (rng.nextInt(3) == 1)
+		{
 			temp.append(" St.");
+		}
 		else
 			temp.append(" Ave.");
 			
-		return new String(temp);
+		return temp.toString();
+	}
+	//This will generate random dates
+	public static String generateDate()
+	{
+		StringBuilder temp = new StringBuilder;
+		Random rng = new Random();
+		int firstDigitDate = rng.nextInt(4);
+		temp.append(firstDigitDate);
+		if (firstDigitDate < 3)
+			temp.append(rng.nextInt(10));
+		else
+			temp.append(rng.nextInt(1));
+		temp.append("-");
+		int month = rng.nextInt(12);
+		if (month == 0)
+			temp.append("JAN-");
+		else if (month == 1)
+			temp.append("FEB-");
+		else if (month == 2)
+			temp.append("MAR-");
+		else if (month == 3)
+			temp.append("APR-");
+		else if (month == 4)
+			temp.append("MAY-");
+		else if (month == 5)
+			temp.append("JUN-");
+		else if (month == 6)
+			temp.append("JUL-");
+		else if (month == 7)
+			temp.append("AUG-");
+		else if (month == 8)
+			temp.append("SEP-");
+		else if (month == 9)
+			temp.append("OCT-");
+		else if (month == 10)
+			temp.append("NOV-");
+		else if (month == 11)
+			temp.append("DEC-");
+		
+		int year = rng.nextInt(2);
+		if (year == 0)
+			temp.append(14);
+		else
+			temp.append(15);
+		return temp.toString();
 	}
     /* This will list all tables in the database, not just our workspace.
      * public static void viewDB() throws SQLException{
