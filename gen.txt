@@ -1,0 +1,52 @@
+****This was on the rubric, because it says "for each attribute of each table" I read that to mean a breakdown of every attribute.
+**
+**Include a file named “gen.txt” in your
+**repository that describes (at a high level) your approach to generating data for each attribute
+**of each table of your example database. Be sure to include any assumptions you make in
+**this file.
+**
+*****Let me know if you guys read this differently.********************************************************
+
+This is a high level overview of how we chose to populate each attribute of our schema.
+
+Warehouse:
+  - WH-ID: Started at 1, each new entry into the relation was one higher;
+  - Warehouse_Name: Random String of arbitrary length 7;
+  - Street_Address: 
+  - City:
+  - State:
+  - Zip_Code:
+  - Tax_Rate:
+  - YTD_Sales_Sum:
+
+DistStation:
+  - WH_ID:
+  - DS_ID:
+  - DS_Name:
+  - Street_Address:
+  - City:
+  - State:
+  - Zip_Code:
+  - Tax_Rate:
+  - YTD_Sales_Sum:
+  
+Customers:
+  - WH_ID:
+  - DS_ID:
+  - First_Name:
+  - Middle_Initial:
+  - Last_Name:
+  - Street_Address:
+  - City:
+  - State:
+  - Zip_Code:
+  - Phone_Number:
+  - Sign_Up_Date:
+  - Active_Discount:
+  - Debt:
+  - YTD_Purchase_Total:
+  - Num_Payments:
+  - Num_Deliveries:
+
+Orders:
+  -
