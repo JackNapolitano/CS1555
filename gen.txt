@@ -1,12 +1,3 @@
-****This was on the rubric, because it says "for each attribute of each table" I read that to mean a breakdown of every attribute.
-**
-**Include a file named “gen.txt” in your
-**repository that describes (at a high level) your approach to generating data for each attribute
-**of each table of your example database. Be sure to include any assumptions you make in
-**this file.
-**
-*****Let me know if you guys read this differently.********************************************************
-
 This is a high level overview of how we chose to populate each attribute of our schema.
 
 Warehouse:
