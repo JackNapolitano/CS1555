@@ -156,7 +156,7 @@ public class GroceryDeliveryDB {
             String insQuery = ("INSERT INTO DistStation VALUES (?,?,?,?,?,?,?,?,?)");
             PreparedStatement ps = connection.prepareStatement(insQuery);
             ps.setLong(1,wh_ID);
-            ps.setString(2, ds_ID);
+            ps.setLong(2, ds_ID);
             ps.setString(3, ds_Name);
             ps.setString(4, street_Address);
             ps.setString(5, city);
@@ -172,15 +172,7 @@ public class GroceryDeliveryDB {
         int wh_ID;
     	int ds_ID;
     	int cust_ID;
-    	String first_Name = "";
-    	String middle_Init = "";
-    	String last_Name = "";
-    	String street_Address = "";
-    	String city = "";
-    	String state = "";
     	int zipcode;
-    	String phone_Num = "";
-    	String signup_Date = "";
     	int active_discount;
     	int debt;
     	int ytdPurchaseTotal;
@@ -191,21 +183,19 @@ public class GroceryDeliveryDB {
             wh_ID = x+1;
             ds_ID = x+2;
             cust_ID = rand.nextInt(1000);
-            first_Name += generateString(8); //could make first letter capital at some point
-            middle_Init += generateString(1);
-            last_Name += generateString(10);
-            street_Address += alphaNumString();
-            city += generateString(7);
-            state += generateString(2);
-            state.toUpperCase();
+            String first_Name = generateString(8); //could make first letter capital at some point
+            String middle_Init = generateString(1);
+            String last_Name = generateString(10);
+            String street_Address = alphaNumString();
+            String city = generateString(7);
+            String state = generateString(2);
+            state = state.toUpperCase();
             zipcode = rand.nextInt(90000) + 10000; //generates a zipcode from 10000-99999
             int num1 = rand.nextInt(900)+100;
-			int num2 = rand.nextInt(900)+100;
-			int num3 = rand.nextInt(9000)+100;
-			phone_Num = num1 +"-"+ num2+"-"+num3;
-			//int is not large enough to hold a number that large
-			//phone_Num = rand.nextInt(900000000) + 100000000; //generates a phone number from 1000000000-9999999999
-            signup_Date += generateDate();
+            int num2 = rand.nextInt(900)+100;
+            int num3 = rand.nextInt(9000)+100;
+            String phone_Num = num1 +"-"+ num2+"-"+num3;
+            String signup_Date = generateDate();
             active_discount = rand.nextInt(20);
             debt = rand.nextInt(40000); //arbitrary
             ytdPurchaseTotal = rand.nextInt(200000);
@@ -213,7 +203,27 @@ public class GroceryDeliveryDB {
             num_deliveries = rand.nextInt(100);
             //do a sql insert here using the JDBC
             Statement st = connection.createStatement();
-            st.executeUpdate("INSERT INTO Customers VALUES (wh_ID, ds_ID, cust_ID, first_Name, middle_Init, last_name, street_Address, city, state, zipcode, phone_Num, signup_Date, active_discount, debt, ytdPurchaseTotal, num_payments, num_deliveries)");
+            System.out.println("");
+            String insQuery = ("INSERT INTO Customers VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+            PreparedStatement ps = connection.prepareStatement(insQuery);
+            ps.setLong(1, wh_ID);
+            ps.setLong(2, ds_ID);
+            ps.setLong(3, cust_ID);
+            ps.setString(4, first_Name);
+            ps.setString(5, middle_Init);
+            ps.setString(6, last_Name);
+            ps.setString(7, street_Address);
+            ps.setString(8, city);
+            ps.setString(9, state);
+            ps.setLong(10, zipcode);
+            ps.setString(11, phone_Num);
+            ps.setString(12, signup_Date);
+            ps.setLong(13, active-discount);
+            ps.setLong(14, debt);
+            ps.setLong(15, ytdPurchaseTotal);
+            ps.setLong(16, num_payments);
+            ps.setLong(17, num_deliveries);
+            ps.executeUpdate();
         }
     }
     public static void GenOrderData(int numDataToGen) throws SQLException{
@@ -221,20 +231,27 @@ public class GroceryDeliveryDB {
        	int ds_ID;
     	int cust_ID;
     	int order_ID;
-    	String date_Placed = "";
-    	String completed_Flag = "";
     	int num_Items;
        	for(int x = 0; x < numDataToGen; x++) {
             //generate the data
             ds_ID = x+2; //arbitrary
             cust_ID = rand.nextInt(1000);
             order_ID = rand.nextInt(50000);
-            date_Placed += generateDate();
-            completed_Flag += "Completed";
+            String date_Placed = generateDate();
+            String completed_Flag = "Completed";
             num_Items = rand.nextInt(80);
             //do a sql insert here using the JDBC
             Statement st= connection.createStatement();
-            st.executeUpdate("INSERT INTO Orders VALUES (ds_ID, cust_ID, order_ID, date_placed, completed_Flag, num_Items)");
+            System.out.println("");
+            String insQuery = ("INSERT INTO Orders VALUES (?,?,?,?,?,?)");
+            PreparedStatement ps = connection.prepareStatement(insQuery);
+            ps.setLong(1, ds_ID);
+            ps.setLong(2, cust_ID);
+            ps.setLong(3, order_ID);
+            ps.setString(4, date_Placed);
+            ps.setString(5, completed_Flag);
+            ps.setLong(6, num_Items);
+            ps.executeUpdate();
         }
     }
     public static void GenLineItemData(int numDataToGen) throws SQLException{
@@ -245,7 +262,6 @@ public class GroceryDeliveryDB {
     	int item_ID;
     	int quantity;
     	int total_Cost;
-    	String date_Delivered = "";
         for(int x = 0; x < numDataToGen; x++) {
             //generate the data
             cust_ID = rand.nextInt(1000);
@@ -254,25 +270,43 @@ public class GroceryDeliveryDB {
             item_ID = rand.nextInt(100000);
             quantity = rand.nextInt(3000);
             total_Cost = rand.nextInt(2000);
-            date_Delivered += generateDate();
+            String date_Delivered = generateDate();
             //do a sql insert here using the JDBC
             Statement st= connection.createStatement();
-            st.executeUpdate("INSERT INTO LineItems VALUES (cust_ID, order_ID, li_ID, item_ID, quantity, total_Cost, date_Delivered)");
+            System.out.println("");
+            String insQuery = ("INSERT INTO LineItems VALUES (?,?,?,?,?,?,?)");
+            PreparedStatement ps = connection.prepareStatement(insQuery);
+            ps.setLong(1, cust_ID);
+            ps.setLong(2, order_ID);
+            ps.setLong(3, li_ID);
+            ps.setLong(4, item_ID);
+            ps.setLong(5, quantity);
+            ps.setLong(6, total_Cost);
+            ps.setString(7, date_Delivered);
+            ps.executeUpdate();
         }
     }
     public static void GenItemData(int numDataToGen) throws SQLException{
     	Random rand = new Random();
         int item_ID;
-        String item_Name = "";
-        int price; //Also needs a function to generate dollars and cents
+        float price; //Also needs a function to generate dollars and cents
         for(int x = 0; x < numDataToGen; x++) {
             //generate the data
             item_ID = rand.nextInt(100000);
-            item_Name += generateString(15);
-            price = rand.nextInt(50);
+            String item_Name = generateString(15);
+            int dollars = rand.nextInt(90000) + 1000;
+            int cents = rand.nextInt(90)+10;
+            String priceString = dollars + "." + cents;
+            price = Float.parseFloat(priceString);
             //do a sql insert here using the JDBC
             Statement st= connection.createStatement();
-            st.executeUpdate("INSERT INTO Items VALUES (item_ID, item_Name, price)");
+            System.out.println("");
+            String insQuery = ("INSERT INTO Items VALUES (?,?,?)");
+            PreparedStatement ps = connection.prepareStatement(insQuery);
+            ps.setLong(1, item_ID);
+            ps.setString(2, item_Name);
+            ps.setFloat(3, price);
+            ps.executeUpdate();
         }
     }
     public static void GenStockData(int numDataToGen) throws SQLException{
@@ -291,7 +325,15 @@ public class GroceryDeliveryDB {
             num_orders = rand.nextInt(20000);
             //do a sql insert here using the JDBC
             Statement st= connection.createStatement();
-            st.executeUpdate("INSERT INTO Stock VALUES (wh_ID, item_ID, quantity_avail, quantity_sold, num_orders)");
+            System.out.println("");
+            String insQuery = ("INSERT INTO Stock VALUES (?,?,?,?,?)");
+            PreparedStatement ps = connection.prepareStatement(insQuery);
+            ps.setLong(1, wh_ID);
+            ps.setLong(2, item_ID);
+            ps.setLong(3, quantity_avail);
+            ps.setLong(4, quantity_sold);
+            ps.setLong(5, num_orders);
+            ps.executeUpdate();
         }
     }
     //This will generate a random string of characters
