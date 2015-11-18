@@ -10,43 +10,69 @@
 This is a high level overview of how we chose to populate each attribute of our schema.
 
 Warehouse:
-  - WH-ID: Started at 1, each new entry into the relation was one higher;
-  - Warehouse_Name: Random String of arbitrary length 7;
-  - Street_Address: 
-  - City:
-  - State:
-  - Zip_Code:
-  - Tax_Rate:
-  - YTD_Sales_Sum:
+  - WH-ID: Started at 1, each new entry into the relation was one higher
+  - Warehouse_Name: Random String of arbitrary length
+  - Street_Address: Random street number + random string for street name + random selection of Rd. St. or Ave.
+  - City: Random String of arbitrary length
+  - State: Random String of arbitrary length
+  - Zip_Code: Random int between 10000-99999
+  - Tax_Rate: Random int between 1-8
+  - YTD_Sales_Sum: Random int
 
 DistStation:
-  - WH_ID:
-  - DS_ID:
-  - DS_Name:
-  - Street_Address:
-  - City:
-  - State:
-  - Zip_Code:
-  - Tax_Rate:
-  - YTD_Sales_Sum:
+  - WH_ID: Started at 1, each new entry into the relation was one higher
+  - DS_ID: Arbitrary for now
+  - DS_Name: Random String
+  - Street_Address: Random street number + random string for street name + random selection of Rd. St. or Ave.
+  - City: Random String
+  - State: Random String of length 2 and capitalized
+  - Zip_Code: Random int between 10000-99999
+  - Tax_Rate: Random int between 1-8
+  - YTD_Sales_Sum: Random int
   
 Customers:
-  - WH_ID:
-  - DS_ID:
-  - First_Name:
-  - Middle_Initial:
-  - Last_Name:
-  - Street_Address:
-  - City:
-  - State:
-  - Zip_Code:
-  - Phone_Number:
-  - Sign_Up_Date:
-  - Active_Discount:
-  - Debt:
-  - YTD_Purchase_Total:
-  - Num_Payments:
-  - Num_Deliveries:
+  - WH_ID: Started at 1, each new entry into the relation was one higher
+  - DS_ID: Arbitrary for now
+  - First_Name: Random String
+  - Middle_Initial: Random String of length 1
+  - Last_Name: Random String
+  - Street_Address: Random street number + random string for street name + random selection of Rd. St. or Ave.
+  - City: Random String
+  - State: Random String of length 2 and capitalized
+  - Zip_Code: Random int between 10000-99999
+  - Phone_Number: String of random ints in the form xxx-xxx-xxxx
+  - Sign_Up_Date: In the form DD-MON-YY, day was randomly generated but only includes valid days, month was randomly selected, and year was randomly selected between 14 and 15 for now
+  - Active_Discount: random int between 0-19
+  - Debt: Random int
+  - YTD_Purchase_Total: Random int
+  - Num_Payments: Random int
+  - Num_Deliveries: Random int
 
 Orders:
-  -
+  - DS_ID: Arbitrary for now
+  - Cust_ID: Random int
+  - Order_ID: Random int
+  - Date_Placed: In the form DD-MON-YY, day was randomly generated but only includes valid days, month was randomly selected, and year was randomly selected between 14 and 15 for now
+  - Completed_Flag: Set to "Completed" for now, we assumed all orders were completed
+  - Num_Items: Random int
+  
+Items:
+  - Item_ID: Random int
+  - Item_Name: Random String
+  - Price: Random float in the form dollars.cents
+  
+LineItems:
+  - Cust_ID: Random int
+  - Order_ID: Random int
+  - LI_ID: Random int
+  - Item_ID: Random int
+  - Quantity: Random int
+  - Total_Cost: Random int
+  - Date_Delivered: In the form DD-MON-YY, day was randomly generated but only includes valid days, month was randomly selected, and year was randomly selected between 14 and 15 for now
+  
+Stock:
+  - WH_ID: Started at 1, each new entry into the relation was one higher
+  - Item_ID: Random int
+  - Quantity_Available: Random int
+  - Quantity_Sold: Random int
+  - Num_Orders: Random int
