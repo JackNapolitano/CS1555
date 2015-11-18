@@ -26,10 +26,12 @@ public class GroceryDeliveryDB {
     private ResultSet resultSet;
     private String query;
    	public static void main(String[] args) throws SQLException, ClassNotFoundException {
-       
+        Scanner reader = new Scanner(System.in);  // Reading from System.in
        //Should we prompt user instead of hard coding this??
-        String username = "jon18";
-        String password = "3676118";
+        System.out.print("Please enter your DB username: ");
+        String username = reader.nextLine();
+        System.out.print("Please enter your DB password: ");
+        String password = reader.nextLine();
         DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
         //Class.forName("oracle.jdbc.OracleDriver");
 		
@@ -40,7 +42,6 @@ public class GroceryDeliveryDB {
         
         while(true) {
             System.out.println("------------------------------------------------------\nWelcome to the Grocery Delivery System. Select how you \nwould like to interact with the system:\n------------------------------------------------------");
-            Scanner reader = new Scanner(System.in);  // Reading from System.in
             System.out.print("1 - \tGenerate/Reset Data\n2 - \tPlace an order:\n3 - \tView databases:\n4 - \tblah:\n5 - \tExit Application:\nEnter a number: ");
             int n = reader.nextInt();
             switch(n) {
@@ -218,7 +219,7 @@ public class GroceryDeliveryDB {
             ps.setLong(10, zipcode);
             ps.setString(11, phone_Num);
             ps.setString(12, signup_Date);
-            ps.setLong(13, active-discount);
+            ps.setLong(13, active_discount);
             ps.setLong(14, debt);
             ps.setLong(15, ytdPurchaseTotal);
             ps.setLong(16, num_payments);
