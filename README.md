@@ -17,10 +17,10 @@ Generate Data for DB from java file. (Nick/Jack)
 To-Do
 -------
 Need to verify correctness of .sql file. <br />
-*Need to set the proper attribute types for the DB* <br />
+*Need to set the proper attribute types for the DB -PHONE NUMBER IS A STRING NOW- Probably should be a varchar in SQL* <br />
 *Need to write triggers for tables* 
 
-Insert statements need changed to prepared statements - use genWarehouseData for reference.
+Insert statements need changed to prepared statements - use genWarehouseData for reference. -DONE-
 
 Java file to connect to DB, Jess has skeleton of that. <br />
 Need to finish method to display table data 
