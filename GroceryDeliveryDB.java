@@ -27,6 +27,7 @@ public class GroceryDeliveryDB {
     private String query;
    	public static void main(String[] args) throws SQLException, ClassNotFoundException {
        
+       //Should we prompt user instead of hard coding this??
         String username = "jon18";
         String password = "3676118";
         DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
@@ -131,28 +132,39 @@ public class GroceryDeliveryDB {
     	Random rand = new Random();
     	int wh_ID;
     	int ds_ID;
-    	String ds_Name = "";
-    	String street_Address = "";
-    	String city = "";
-    	String state = "";
     	int zipcode;
     	int taxrate;
-    	int ytdSalesSum;
+    	float ytdSalesSum;
     	for(int x = 0; x < numDataToGen; x++) {
             //generate the data
             wh_ID = x+1; //In dealing with PK's and FK's, I assume we'll need a way to sync these for each table i.e. wh_ID's should match up
             ds_ID = x+2; //^^same as above, what should these really be?
-            ds_Name += generateString(7);
-            street_Address += alphaNumString();
-            city += generateString(7);
-            state += generateString(2);
-            state.toUpperCase();
+            String ds_Name = generateString(7);
+            String street_Address = alphaNumString();
+            String city = generateString(7);
+            String state = generateString(2);
+            state = state.toUpperCase();
             zipcode = rand.nextInt(90000) + 10000; //generates a zipcode from 10000-99999
             taxrate = rand.nextInt(8) + 1; //generates a taxrate from 1% to 8%
-            ytdSalesSum = rand.nextInt(90000) + 1000;
+            int dollars = rand.nextInt(90000) + 1000;
+            int cents = rand.nextInt(90)+10;
+            String ytdSalesString = dollars + "." + cents;  
+            ytdSalesSum = Float.parseFloat(ytdSalesString);
             //do a sql insert here using the JDBC
-            Statement st= connection.createStatement();
-            st.executeUpdate("INSERT INTO DistStation VALUES (wh_ID, ds_ID, ds_Name, street_Address, city, state, zipcode, taxrate, ytdSalesSum)");
+            Statement st = connection.createStatement();
+            System.out.println("");
+            String insQuery = ("INSERT INTO DistStation VALUES (?,?,?,?,?,?,?,?,?)");
+            PreparedStatement ps = connection.prepareStatement(insQuery);
+            ps.setLong(1,wh_ID);
+            ps.setString(2, ds_ID);
+            ps.setString(3, ds_Name);
+            ps.setString(4, street_Address);
+            ps.setString(5, city);
+            ps.setString(6, state);
+            ps.setLong(7, zipcode);
+            ps.setLong(8, taxrate);
+            ps.setFloat(9, ytdSalesSum);
+            ps.executeUpdate();
         }
     }
     public static void GenCustomerData(int numDataToGen) throws SQLException{
