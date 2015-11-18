@@ -146,22 +146,42 @@ public class GroceryDeliveryDB {
     	int ds_ID;
     	int cust_ID;
     	String first_Name = "";
-    	String middle_init = "";
+    	String middle_Init = "";
     	String last_Name = "";
     	String street_Address = "";
     	String city = "";
     	String state = "";
     	int zipcode;
     	int phone_Num;
-    	int signup_Date;
-    	//double active_discount;
+    	String signup_Date;
+    	int active_discount;
     	int debt;
     	int ytdPurchaseTotal;
     	int num_payments;
     	int num_deliveries;
         for(int x = 0; x < numDataToGen; x++) {
             //generate the data
+            wh_ID = x+1;
+            ds_ID = x+2;
+            cust_ID = rand.nextInt(1000);
+            first_Name += generateString(8); //could make first letter capital at some point
+            middle_Init += generateString(1);
+            last_Name += generateString(10);
+            street_Address += alphaNumString();
+            city += generateString(7);
+            state += generateString(2);
+            state.toUpperCase();
+            zipcode = rand.nextInt(90000) + 10000; //generates a zipcode from 10000-99999
+            phone_Num = rand.nextInt(9000000000) + 1000000000; //generates a phone number from 1000000000-9999999999
+            signup_Date += generateDate();
+            active_discount = rand.nextInt(20);
+            debt = rand.nextInt(40000); //arbitrary
+            ytdPurchaseTotal = rand.nextInt(200000);
+            num_payments = rand.nextInt(100);
+            num_deliveries = rand.nextInt(100);
             //do a sql insert here using the JDBC
+            statement = connection.createStatement();
+            statement.executeUpdate("INSERT INTO Customers VALUES (wh_ID, ds_ID, cust_ID, first_Name, middle_Init, last_name, street_Address, city, state, zipcode, phone_Num, signup_Date, active_discount, debt, ytdPurchaseTotal, num_payments, num_deliveries)");
         }
     }
     public static void GenOrderData(int numDataToGen) {
@@ -169,12 +189,20 @@ public class GroceryDeliveryDB {
        	int ds_ID;
     	int cust_ID;
     	int order_ID;
-    	//int date_Placed;
-    	//String completed_Flag;
+    	String date_Placed = "";
+    	String completed_Flag = "";
     	int num_Items;
        	for(int x = 0; x < numDataToGen; x++) {
             //generate the data
+            ds_ID = x+2; //arbitrary
+            cust_ID = rand.nextInt(1000);
+            order_ID = rand.nextInt(50000);
+            date_Placed += generateDate();
+            completed_Flag += "Completed";
+            num_Items = rand.nextInt(80);
             //do a sql insert here using the JDBC
+            statement = connection.createStatement();
+            statement.executeUpdate("INSERT INTO Orders VALUES (ds_ID, cust_ID, order_ID, date_placed, completed_Flag, num_Items)");
         }
     }
     public static void GenLineItemData(int numDataToGen) {
@@ -185,20 +213,34 @@ public class GroceryDeliveryDB {
     	int item_ID;
     	int quantity;
     	int total_Cost;
-    	//int date_Delivered;
+    	String date_Delivered = "";
         for(int x = 0; x < numDataToGen; x++) {
             //generate the data
+            cust_ID = rand.nextInt(1000);
+            order_ID = rand.nextInt(50000);
+            li_ID = rand.nextInt(50000);
+            item_ID = rand.nextInt(100000);
+            quantity = rand.nextInt(3000);
+            total_Cost = rand.nextInt(2000);
+            date_Delivered += generateDate();
             //do a sql insert here using the JDBC
+            statement = connection.createStatement();
+            statement.executeUpdate("INSERT INTO LineItems VALUES (cust_ID, order_ID, li_ID, item_ID, quantity, total_Cost, date_Delivered)");
         }
     }
     public static void GenItemData(int numDataToGen) {
     	Random rand = new Random();
         int item_ID;
         String item_Name = "";
-        int price;
+        int price; //Also needs a function to generate dollars and cents
         for(int x = 0; x < numDataToGen; x++) {
             //generate the data
+            item_ID = rand.nextInt(100000);
+            item_Name += generateString(15);
+            price = rand.nextInt(50);
             //do a sql insert here using the JDBC
+            statement = connection.createStatement();
+            statement.executeUpdate("INSERT INTO Items VALUES (item_ID, item_Name, price)");
         }
     }
     public static void GenStockData(int numDataToGen) {
@@ -210,7 +252,14 @@ public class GroceryDeliveryDB {
         int num_orders;
         for(int x = 0; x < numDataToGen; x++) {
             //generate the data
+            wh_ID = x+1;
+            item_ID = rand.nextInt(100000);
+            quantity_avail = rand.nextInt(5000);
+            quantity_sold = rand.nextInt(5000);
+            num_orders = rand.nextInt(20000);
             //do a sql insert here using the JDBC
+            statement = connection.createStatement();
+            statement.executeUpdate("INSERT INTO Stock VALUES (wh_ID, item_ID, quantity_avail, quantity_sold, num_orders)");
         }
     }
     //This will generate a random string of characters
@@ -290,6 +339,7 @@ public class GroceryDeliveryDB {
 			temp.append(14);
 		else
 			temp.append(15);
+		
 		return temp.toString();
 	}
     /* This will list all tables in the database, not just our workspace.
