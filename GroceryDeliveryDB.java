@@ -418,21 +418,20 @@ public class GroceryDeliveryDB {
 		return temp.toString();
 	}
 
-      public static void viewDB() throws SQLException{
-    	  Statement stmt = connection.createStatement();
-    	  ResultSet rs = stmt.executeQuery("select * from Warehouse");
-    	  ResultSetMetaData rsmd = rs.getMetaData();
-    	  System.out.println("Warehouse");
-    	  System.out.println("-----------------------------------------------------------------------------------");
-    	  System.out.println(rsmd.getColumnName(1)+"\t"+rsmd.getColumnName(2)+"\t"+rsmd.getColumnName(3)+"\t"+rsmd.getColumnName(4)+"\t"+rsmd.getColumnName(5)+"\t"+
-    			  rsmd.getColumnName(6)+"\t"+rsmd.getColumnName(7)+"\t"+rsmd.getColumnName(8));
-    	  System.out.println("-----------------------------------------------------------------------------------");
-    	  while(rs.next()){
-    		  System.out.println(rs.getLong(1)+"\t"+rs.getString(2)+"\t"+rs.getString(3)+"\t"+rs.getString(4)+"\t"+rs.getString(5)+"\t"+
-    				  rs.getLong(6)+"\t"+
-    				  rs.getLong(7)+"\t"+
-    				  rs.getFloat(8));
-    	  }
+    public static void viewDB() throws SQLException
+    {
+        Statement stmt = connection.createStatement();
+        ResultSet rs = stmt.executeQuery("select * from Warehouse");
+        ResultSetMetaData rsmd = rs.getMetaData();
+        System.out.println("Warehouse");
+        System.out.println("--------------------------------------------------------------------------------------------------");
+        String format = "%-7s%-16s%-20s%-12s%-7s%-10s%-12s%-17s%n";
+        System.out.printf(format, rsmd.getColumnName(1), rsmd.getColumnName(2), rsmd.getColumnName(3), rsmd.getColumnName(4), rsmd.getColumnName(5), rsmd.getColumnName(6), rsmd.getColumnName(7), rsmd.getColumnName(8));
+        System.out.println("--------------------------------------------------------------------------------------------------");
+        while(rs.next()){
+            String format2 = "%-7s%-16s%-20s%-12s%-7s%-10s%-12s%-17s%n";
+            System.out.printf(format2, rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getLong(6), rs.getLong(7), rs.getFloat(8));
+        }
     }
       
 	public static void resetDatabase() throws SQLException {
