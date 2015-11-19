@@ -297,8 +297,8 @@ public class GroceryDeliveryDB {
                             Statement st= connection.createStatement();
                             String insQuery = ("INSERT INTO LineItems VALUES (?,?,?,?,?,?,?,?,?)");
                             PreparedStatement ps = connection.prepareStatement(insQuery);
-                            ps.setLong(1, cust_ID);
-                            ps.setLong(2, order_ID);
+                            ps.setLong(1, wh_ID);
+                            ps.setLong(2, ds_ID);
                             ps.setLong(3, cust_ID);
                             ps.setLong(4, order_ID);
                             ps.setLong(5, li_ID);
