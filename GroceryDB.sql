@@ -177,17 +177,3 @@ CONSTRAINT fk_Stock_Warehouse_1 FOREIGN KEY (WH_ID) REFERENCES Warehouse (WH_ID)
 CONSTRAINT fk_Stock_Items_1 FOREIGN KEY (Item_ID) REFERENCES Items (Item_ID)
 
 );
-
-create or replace trigger UpdatePaidorDebt
-	after insert or update on Orders
-	for each row
-	begin
-      case
-        when(new.COMPLETED_FLAG = "Completed")
-          update Customers set YTD_PURCHASE_TOTAL =: old.YTD_PURCHASE_TOTAL + select sum(TOTAL_COST) FROM LineItems 
-            WHERE ORDER_ID= new.ORDER_ID; 
-        when (new.COMPLETED_FLAG = "Incomplete")
-          update Customers set DEBT =: old.DEBT + select sum(TOTAL_COST) FROM LineItems 
-            WHERE ORDER_ID= new.ORDER_ID; 
-	end;
-/	
