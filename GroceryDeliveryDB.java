@@ -66,10 +66,11 @@ public class GroceryDeliveryDB {
         }
     }
     public static void GenData() {
-   		System.out.println("Generating data for the database...");
+   		
         
         //create tables from .sql file
 		try {
+            System.out.println("Creating the database...");
 			resetDatabase();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -78,6 +79,7 @@ public class GroceryDeliveryDB {
 		
         //gen the data for the db
 		try{
+            System.out.println("Generating data for the database...");
             GenItemData(1000);//1000 unique grocery items
 	        GenWarehouseData(10); //we chose 10 warehouses as it is a logical number of warehouses
 	        GenDistStationData(10, 15);//10 warehouses, 15 DS per HW
