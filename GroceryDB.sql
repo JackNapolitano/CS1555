@@ -11,6 +11,19 @@ DROP TABLE Warehouse;
 */
 
 
+--Drop Tables
+--uncomment to re run .sql
+/*
+DROP TABLE Stock;
+DROP TABLE LineItems;
+DROP TABLE Items;
+DROP TABLE Orders;
+DROP TABLE Customers;
+DROP TABLE DistStation;
+DROP TABLE Warehouse;
+*/
+
+
 CREATE TABLE Warehouse (
 
 WH_ID NUMBER(11) NOT NULL,
@@ -25,9 +38,9 @@ State VARCHAR2(255) NULL,
 
 Zip_Code VARCHAR2(255) NULL,
 
-Tax_Rate VARCHAR2(255) NULL,
+Tax_Rate NUMBER NULL,
 
-YTD_Sales_Sum VARCHAR2(255) NULL,
+YTD_Sales_Sum NUMBER(20, 2) NULL,
 
 PRIMARY KEY (WH_ID) 
 
@@ -49,9 +62,9 @@ State VARCHAR2(255) NULL,
 
 Zip_Code VARCHAR2(255) NULL,
 
-Tax_Rate VARCHAR2(255) NULL,
+Tax_Rate NUMBER NULL,
 
-YTD_Sales_Sum VARCHAR2(255) NULL,
+YTD_Sales_Sum NUMBER(20, 2) NULL,
 
 PRIMARY KEY (WH_ID, DS_ID),
 
@@ -81,27 +94,29 @@ State VARCHAR2(255) NULL,
 
 Zip_code VARCHAR2(255) NULL,
 
-Phone_Number VARCHAR(14) NULL,
+Phone_Number NUMBER(11) NULL,
 
 Sign_Up_Date DATE NULL,
 
-Active_Discount VARCHAR2(255) NULL,
+Active_Discount NUMBER NULL,
 
-Debt VARCHAR2(255) NULL,
+Debt NUMBER(20, 2) NULL,
 
-YTD_Purchase_Total VARCHAR2(255) NULL,
+YTD_Purchase_Total NUMBER(20, 2) NULL,
 
-Num_Payments VARCHAR2(255) NULL,
+Num_Payments NUMBER NULL,
 
-Num_Deliveries VARCHAR2(255) NULL,
+Num_Deliveries NUMBER NULL,
 
-PRIMARY KEY (DS_ID, Cust_ID),
+PRIMARY KEY (WH_ID, DS_ID, Cust_ID),
 
 CONSTRAINT fk_Customers_DistStation_1 FOREIGN KEY (WH_ID, DS_ID) REFERENCES DistStation(WH_ID, DS_ID)
 
 );
 
 CREATE TABLE Orders (
+
+WH_ID NUMBER(11) NOT NULL,
 
 DS_ID NUMBER(11) NOT NULL,
 
@@ -113,11 +128,11 @@ Date_Placed DATE NULL,
 
 Completed_Flag VARCHAR2(255) NULL,
 
-Num_Items VARCHAR2(255) NULL,
+Num_Items NUMBER NULL,
 
-PRIMARY KEY (Cust_ID, Order_ID),
+PRIMARY KEY (WH_ID, DS_ID, Cust_ID, Order_ID),
 
-CONSTRAINT fk_Orders_Customers_1 FOREIGN KEY (DS_ID, Cust_ID) REFERENCES Customers (DS_ID, Cust_ID)
+CONSTRAINT fk_Orders_Customers_1 FOREIGN KEY (WH_ID, DS_ID, Cust_ID) REFERENCES Customers (WH_ID, DS_ID, Cust_ID)
 
 );
 
@@ -135,6 +150,10 @@ PRIMARY KEY (Item_ID)
 
 CREATE TABLE LineItems (
 
+WH_ID NUMBER(11) NOT NULL,
+
+DS_ID NUMBER(11) NOT NULL,
+
 Cust_ID NUMBER(11) NOT NULL,
 
 Order_ID NUMBER(11) NOT NULL,
@@ -143,15 +162,15 @@ LI_ID NUMBER(11) NOT NULL,
 
 Item_ID NUMBER(11) NULL,
 
-Quantity VARCHAR2(255) NULL,
+Quantity NUMBER NULL,
 
-Total_Cost NUMBER NULL,
+Total_Cost NUMBER(20, 2) NULL,
 
 Date_Delivered DATE NULL,
 
-PRIMARY KEY (Order_ID, LI_ID),
+PRIMARY KEY (WH_ID, DS_ID, Cust_ID, Order_ID, LI_ID),
 
-CONSTRAINT fk_LineItems_Orders_1 FOREIGN KEY (Cust_ID, Order_ID) REFERENCES Orders (Cust_ID, Order_ID),
+CONSTRAINT fk_LineItems_Orders_1 FOREIGN KEY (WH_ID, DS_ID, Cust_ID, Order_ID) REFERENCES Orders (WH_ID, DS_ID, Cust_ID, Order_ID),
 
 CONSTRAINT fk_LineItems_Items_1 FOREIGN KEY (Item_ID) REFERENCES Items (Item_ID)
 
@@ -163,11 +182,11 @@ WH_ID NUMBER NOT NULL,
 
 Item_ID NUMBER NOT NULL,
 
-Quantity_Available VARCHAR2(255) NULL,
+Quantity_Available NUMBER NULL,
 
-Quantity_Sold VARCHAR2(255) NULL,
+Quantity_Sold NUMBER NULL,
 
-Num_Orders VARCHAR2(255) NULL,
+Num_Orders NUMBER NULL,
 
 PRIMARY KEY (WH_ID, Item_ID),
 
