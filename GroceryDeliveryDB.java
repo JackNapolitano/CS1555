@@ -65,9 +65,7 @@ public class GroceryDeliveryDB {
             }
         }
     }
-    public static void GenData() {
-   		
-        
+    public static void GenData() { 
         //create tables from .sql file
 		try {
             System.out.println("Creating the database...");
@@ -80,13 +78,14 @@ public class GroceryDeliveryDB {
         //gen the data for the db
 		try{
             System.out.println("Generating data for the database...");
-            GenItemData(1000);//1000 unique grocery items
-	        GenWarehouseData(10); //we chose 10 warehouses as it is a logical number of warehouses
-	        GenDistStationData(10, 15);//10 warehouses, 15 DS per HW
-	        GenCustomerData(10, 15, 30);//10 warehouses, 15 DistStations per HW, 30 customers per DS
-	        GenOrderData(10, 15, 30, 5);//10 warehouses, 15 DistStations per HW, 30 customers per DS, 5 orders per cust
-	        GenLineItemData(10, 15, 30, 5, 5);//10 warehouses, 15 DistStations per HW, 30 customers per DS, 5 orders per cust, 5 line items per cust
-	        GenStockData(10, 2000);	
+            GenItemData(50);//500 unique grocery items
+	        GenWarehouseData(10); //we chose 20 warehouses as it is a logical number of warehouses
+	        GenDistStationData(10, 10);//20 warehouses, 10 DS per HW
+	        GenCustomerData(10, 10, 10);//20 warehouses, 10 DistStations per HW, 15 customers per DS
+	        GenOrderData(10, 10, 10, 5);//20 warehouses, 10 DistStations per HW, 15 customers per DS, 5 orders per cust
+            GenStockData(10, 50);	
+            GenLineItemData(10, 10, 10, 5, 3);//20 warehouses, 10 DistStations per HW, 15 customers per DS, 5 orders per cust, 3 line items per cust
+
 		}
 		catch (SQLException e){
 			e.printStackTrace();
@@ -100,7 +99,7 @@ public class GroceryDeliveryDB {
         float ytdSalesSum; //Making this an int for now as well, we don't need to be that specific yet
         for(int x = 0; x < numWH; x++) {
             //generate the data. I picked 7 as the length for the strings for no reason.
-            wh_ID = x+1;
+            wh_ID = x;
             String wh_Name = generateString(7);
             String street_Address = alphaNumString();
             String city = generateString(7);
@@ -114,7 +113,6 @@ public class GroceryDeliveryDB {
             ytdSalesSum = Float.parseFloat(ytdSalesString); //We should build a method to just give an integer plus decimal places. This only does values 0.0-1.0  FIXED 11/17 see above
             //do a sql insert here using the JDBC
             Statement st = connection.createStatement();
-            System.out.println("");
             String insQuery = ("INSERT INTO Warehouse VALUES (?,?,?,?,?,?,?,?)");
             PreparedStatement ps = connection.prepareStatement(insQuery);
             ps.setLong(1,wh_ID);
@@ -126,6 +124,7 @@ public class GroceryDeliveryDB {
             ps.setLong(7, taxrate);
             ps.setFloat(8, ytdSalesSum);
             ps.executeUpdate();
+            ps.close();
             //System.out.println("WH_ID: "+ wh_ID+ "\nWarehouse_Name: "+ wh_Name+ "\nStreet_Address: "+ street_Address+ "\nCity: "+ city+ "\nState: "+ state + "\nZipcode: "+ zipcode + "\nTax Rate:" + taxrate+ "\nYTD_Sales_Sum: " +ytdSalesSum);
         }
     }
@@ -139,8 +138,8 @@ public class GroceryDeliveryDB {
     	for(int x = 0; x < numWH; x++) {
             for(int y = 0; y < numDS; y++) {
                 //generate the data
-                wh_ID = x+1; //In dealing with PK's and FK's, I assume we'll need a way to sync these for each table i.e. wh_ID's should match up
-                ds_ID = y+1; //^^same as above, what should these really be?
+                wh_ID = x; //In dealing with PK's and FK's, I assume we'll need a way to sync these for each table i.e. wh_ID's should match up
+                ds_ID = y; //^^same as above, what should these really be?
                 String ds_Name = generateString(7);
                 String street_Address = alphaNumString();
                 String city = generateString(7);
@@ -154,7 +153,6 @@ public class GroceryDeliveryDB {
                 ytdSalesSum = Float.parseFloat(ytdSalesString);
                 //do a sql insert here using the JDBC
                 Statement st = connection.createStatement();
-                System.out.println("");
                 String insQuery = ("INSERT INTO DistStation VALUES (?,?,?,?,?,?,?,?,?)");
                 PreparedStatement ps = connection.prepareStatement(insQuery);
                 ps.setLong(1,wh_ID);
@@ -167,6 +165,7 @@ public class GroceryDeliveryDB {
                 ps.setLong(8, taxrate);
                 ps.setFloat(9, ytdSalesSum);
                 ps.executeUpdate();
+                ps.close();
             }
         }
     }
@@ -185,9 +184,9 @@ public class GroceryDeliveryDB {
             for(int y = 0; y < numDS; y++) {
                 for(int z = 0; z < numCust; z++) {
                     //generate the data
-                    wh_ID = x+1;
-                    ds_ID = y+1;
-                    cust_ID = z+1;
+                    wh_ID = x;
+                    ds_ID = y;
+                    cust_ID = z;
                     String first_Name = generateString(8); //could make first letter capital at some point
                     String middle_Init = generateString(1);
                     String last_Name = generateString(10);
@@ -208,7 +207,6 @@ public class GroceryDeliveryDB {
                     num_deliveries = rand.nextInt(100);
                     //do a sql insert here using the JDBC
                     Statement st = connection.createStatement();
-                    System.out.println("");
                     String insQuery = ("INSERT INTO Customers VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
                     PreparedStatement ps = connection.prepareStatement(insQuery);
                     ps.setLong(1, wh_ID);
@@ -229,6 +227,7 @@ public class GroceryDeliveryDB {
                     ps.setLong(16, num_payments);
                     ps.setLong(17, num_deliveries);
                     ps.executeUpdate();
+                    ps.close();
                 }
             }
         }
@@ -244,16 +243,15 @@ public class GroceryDeliveryDB {
             for(int x = 0; x < numDS; x++) {
                 for(int y = 0; y < numCust; y++) {
                     for(int z = 0; z < numOrders; z++) {            
-                        wh_ID = w+1;
-                        ds_ID = x+1;
-                        cust_ID = y+1;
-                        order_ID = z+1;
+                        wh_ID = w;
+                        ds_ID = x;
+                        cust_ID = y;
+                        order_ID = z;
                         String date_Placed = generateDate();
                         String completed_Flag = "Completed";
                         num_Items = rand.nextInt(80);
                         //do a sql insert here using the JDBC
                         Statement st= connection.createStatement();
-                        System.out.println("");
                         String insQuery = ("INSERT INTO Orders VALUES (?,?,?,?,?,?,?)");
                         PreparedStatement ps = connection.prepareStatement(insQuery);
                         ps.setLong(1, wh_ID);
@@ -264,6 +262,7 @@ public class GroceryDeliveryDB {
                         ps.setString(6, completed_Flag);
                         ps.setLong(7, num_Items);
                         ps.executeUpdate();
+                        ps.close();
                     }
                 }
             }
@@ -285,18 +284,17 @@ public class GroceryDeliveryDB {
                     for(int z = 0; z < numOrders; z++) {
                         for(int a = 0; a < numLIs; a++) {
                             //generate the data
-                            wh_ID = x+1;
-                            ds_ID = x+1;
-                            cust_ID = x+1;
-                            order_ID = x+1;
-                            li_ID = x+1;
-                            item_ID = rand.nextInt(500);
+                            wh_ID = w;
+                            ds_ID = x;
+                            cust_ID = y;
+                            order_ID = z;
+                            li_ID = a;
+                            item_ID = rand.nextInt(30);
                             quantity = rand.nextInt(3000);
                             total_Cost = rand.nextInt(2000);
                             String date_Delivered = generateDate();
                             //do a sql insert here using the JDBC
                             Statement st= connection.createStatement();
-                            System.out.println("");
                             String insQuery = ("INSERT INTO LineItems VALUES (?,?,?,?,?,?,?,?,?)");
                             PreparedStatement ps = connection.prepareStatement(insQuery);
                             ps.setLong(1, cust_ID);
@@ -309,6 +307,7 @@ public class GroceryDeliveryDB {
                             ps.setLong(8, total_Cost);
                             ps.setString(9, date_Delivered);
                             ps.executeUpdate();
+                            ps.close();
                         }
                     }
                 }
@@ -321,7 +320,7 @@ public class GroceryDeliveryDB {
         float price; //Also needs a function to generate dollars and cents
         for(int x = 0; x < numItems; x++) {
             //generate the data
-            item_ID = x+1;
+            item_ID = x;
             String item_Name = generateString(15);
             int dollars = rand.nextInt(90000) + 1000;
             int cents = rand.nextInt(90)+10;
@@ -329,13 +328,13 @@ public class GroceryDeliveryDB {
             price = Float.parseFloat(priceString);
             //do a sql insert here using the JDBC
             Statement st= connection.createStatement();
-            System.out.println("");
             String insQuery = ("INSERT INTO Items VALUES (?,?,?)");
             PreparedStatement ps = connection.prepareStatement(insQuery);
             ps.setLong(1, item_ID);
             ps.setString(2, item_Name);
             ps.setFloat(3, price);
             ps.executeUpdate();
+            ps.close();
         }
     }
     public static void GenStockData(int numWH, int numItems) throws SQLException{
@@ -348,14 +347,13 @@ public class GroceryDeliveryDB {
         for(int x = 0; x < numWH; x++) {
             for(int y = 0; y < numItems; y++) {
                 //generate the data
-                wh_ID = x+1;
-                item_ID = x+1;
+                wh_ID = x;
+                item_ID = x;
                 quantity_avail = rand.nextInt(5000);
                 quantity_sold = rand.nextInt(5000);
                 num_orders = rand.nextInt(20000);
                 //do a sql insert here using the JDBC
                 Statement st= connection.createStatement();
-                System.out.println("");
                 String insQuery = ("INSERT INTO Stock VALUES (?,?,?,?,?)");
                 PreparedStatement ps = connection.prepareStatement(insQuery);
                 ps.setLong(1, wh_ID);
@@ -364,6 +362,7 @@ public class GroceryDeliveryDB {
                 ps.setLong(4, quantity_sold);
                 ps.setLong(5, num_orders);
                 ps.executeUpdate();
+                ps.close();
             }
         }
     }
@@ -406,7 +405,7 @@ public class GroceryDeliveryDB {
 	{
 		StringBuilder temp = new StringBuilder();
 		Random rng = new Random();
-		int firstDigitDate = rng.nextInt(4);
+		int firstDigitDate = rng.nextInt(3);
 		temp.append(firstDigitDate);
 		if (firstDigitDate < 3)
 			temp.append(rng.nextInt(10));

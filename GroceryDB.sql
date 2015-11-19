@@ -76,9 +76,9 @@ State VARCHAR2(255) NULL,
 
 Zip_code VARCHAR2(255) NULL,
 
-Phone_Number NUMBER(11) NULL,
+Phone_Number VARCHAR2(255) NULL,
 
-Sign_Up_Date DATE NULL,
+Sign_Up_Date VARCHAR2(255) NULL,
 
 Active_Discount NUMBER NULL,
 
@@ -106,7 +106,7 @@ Cust_ID NUMBER(11) NOT NULL,
 
 Order_ID NUMBER(11) NOT NULL,
 
-Date_Placed DATE NULL,
+Date_Placed VARCHAR2(255) NULL,
 
 Completed_Flag VARCHAR2(255) NULL,
 
@@ -148,7 +148,7 @@ Quantity NUMBER NULL,
 
 Total_Cost NUMBER(20, 2) NULL,
 
-Date_Delivered DATE NULL,
+Date_Delivered VARCHAR2(255) NULL,
 
 PRIMARY KEY (WH_ID, DS_ID, Cust_ID, Order_ID, LI_ID),
 
