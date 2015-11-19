@@ -67,7 +67,6 @@ public class GroceryDeliveryDB {
     }
     public static void GenData() {
    		System.out.println("Generating data for the database...");
-        int numDataToGen = 15; //generate 1000 items of data
         
         //create tables from .sql file
 		try {
@@ -79,26 +78,25 @@ public class GroceryDeliveryDB {
 		
         //gen the data for the db
 		try{
-	        GenWarehouseData(numDataToGen);
-	        GenDistStationData(numDataToGen);
-	        GenCustomerData(numDataToGen);
-	        GenOrderData(numDataToGen);
-	        GenLineItemData(numDataToGen);
-	        GenItemData(numDataToGen);
-	        GenStockData(numDataToGen);	
+            GenItemData(1000);//1000 unique grocery items
+	        GenWarehouseData(10); //we chose 10 warehouses as it is a logical number of warehouses
+	        GenDistStationData(10, 15);//10 warehouses, 15 DS per HW
+	        GenCustomerData(10, 15, 30);//10 warehouses, 15 DistStations per HW, 30 customers per DS
+	        GenOrderData(10, 15, 30, 5);//10 warehouses, 15 DistStations per HW, 30 customers per DS, 5 orders per cust
+	        GenLineItemData(10, 15, 30, 5, 5);//10 warehouses, 15 DistStations per HW, 30 customers per DS, 5 orders per cust, 5 line items per cust
+	        GenStockData(10, 2000);	
 		}
 		catch (SQLException e){
 			e.printStackTrace();
 		}
     }
-    public static void GenWarehouseData(int numDataToGen) throws SQLException{
-    //Should I initialize Strings with "" and then concat instead of assign?
+    public static void GenWarehouseData(int numWH) throws SQLException{
         Random rand = new Random();
         int wh_ID;
         int zipcode;
         int taxrate; //this is sales tax, I changed it to an int, doesn't need to be a double
         float ytdSalesSum; //Making this an int for now as well, we don't need to be that specific yet
-        for(int x = 0; x < numDataToGen; x++) {
+        for(int x = 0; x < numWH; x++) {
             //generate the data. I picked 7 as the length for the strings for no reason.
             wh_ID = x+1;
             String wh_Name = generateString(7);
@@ -129,46 +127,48 @@ public class GroceryDeliveryDB {
             //System.out.println("WH_ID: "+ wh_ID+ "\nWarehouse_Name: "+ wh_Name+ "\nStreet_Address: "+ street_Address+ "\nCity: "+ city+ "\nState: "+ state + "\nZipcode: "+ zipcode + "\nTax Rate:" + taxrate+ "\nYTD_Sales_Sum: " +ytdSalesSum);
         }
     }
-    public static void GenDistStationData(int numDataToGen) throws SQLException{
+    public static void GenDistStationData(int numWH, int numDS) throws SQLException{
     	Random rand = new Random();
     	int wh_ID;
     	int ds_ID;
     	int zipcode;
     	int taxrate;
     	float ytdSalesSum;
-    	for(int x = 0; x < numDataToGen; x++) {
-            //generate the data
-            wh_ID = x+1; //In dealing with PK's and FK's, I assume we'll need a way to sync these for each table i.e. wh_ID's should match up
-            ds_ID = x+2; //^^same as above, what should these really be?
-            String ds_Name = generateString(7);
-            String street_Address = alphaNumString();
-            String city = generateString(7);
-            String state = generateString(2);
-            state = state.toUpperCase();
-            zipcode = rand.nextInt(90000) + 10000; //generates a zipcode from 10000-99999
-            taxrate = rand.nextInt(8) + 1; //generates a taxrate from 1% to 8%
-            int dollars = rand.nextInt(90000) + 1000;
-            int cents = rand.nextInt(90)+10;
-            String ytdSalesString = dollars + "." + cents;  
-            ytdSalesSum = Float.parseFloat(ytdSalesString);
-            //do a sql insert here using the JDBC
-            Statement st = connection.createStatement();
-            System.out.println("");
-            String insQuery = ("INSERT INTO DistStation VALUES (?,?,?,?,?,?,?,?,?)");
-            PreparedStatement ps = connection.prepareStatement(insQuery);
-            ps.setLong(1,wh_ID);
-            ps.setLong(2, ds_ID);
-            ps.setString(3, ds_Name);
-            ps.setString(4, street_Address);
-            ps.setString(5, city);
-            ps.setString(6, state);
-            ps.setLong(7, zipcode);
-            ps.setLong(8, taxrate);
-            ps.setFloat(9, ytdSalesSum);
-            ps.executeUpdate();
+    	for(int x = 0; x < numWH; x++) {
+            for(int y = 0; y < numDS; y++) {
+                //generate the data
+                wh_ID = x+1; //In dealing with PK's and FK's, I assume we'll need a way to sync these for each table i.e. wh_ID's should match up
+                ds_ID = y+1; //^^same as above, what should these really be?
+                String ds_Name = generateString(7);
+                String street_Address = alphaNumString();
+                String city = generateString(7);
+                String state = generateString(2);
+                state = state.toUpperCase();
+                zipcode = rand.nextInt(90000) + 10000; //generates a zipcode from 10000-99999
+                taxrate = rand.nextInt(8) + 1; //generates a taxrate from 1% to 8%
+                int dollars = rand.nextInt(90000) + 1000;
+                int cents = rand.nextInt(90)+10;
+                String ytdSalesString = dollars + "." + cents;  
+                ytdSalesSum = Float.parseFloat(ytdSalesString);
+                //do a sql insert here using the JDBC
+                Statement st = connection.createStatement();
+                System.out.println("");
+                String insQuery = ("INSERT INTO DistStation VALUES (?,?,?,?,?,?,?,?,?)");
+                PreparedStatement ps = connection.prepareStatement(insQuery);
+                ps.setLong(1,wh_ID);
+                ps.setLong(2, ds_ID);
+                ps.setString(3, ds_Name);
+                ps.setString(4, street_Address);
+                ps.setString(5, city);
+                ps.setString(6, state);
+                ps.setLong(7, zipcode);
+                ps.setLong(8, taxrate);
+                ps.setFloat(9, ytdSalesSum);
+                ps.executeUpdate();
+            }
         }
     }
-    public static void GenCustomerData(int numDataToGen) throws SQLException{
+    public static void GenCustomerData(int numWH, int numDS, int numCust) throws SQLException{
     	Random rand = new Random();
         int wh_ID;
     	int ds_ID;
@@ -179,121 +179,147 @@ public class GroceryDeliveryDB {
     	int ytdPurchaseTotal;
     	int num_payments;
     	int num_deliveries;
-        for(int x = 0; x < numDataToGen; x++) {
-            //generate the data
-            wh_ID = x+1;
-            ds_ID = x+2;
-            cust_ID = rand.nextInt(1000);
-            String first_Name = generateString(8); //could make first letter capital at some point
-            String middle_Init = generateString(1);
-            String last_Name = generateString(10);
-            String street_Address = alphaNumString();
-            String city = generateString(7);
-            String state = generateString(2);
-            state = state.toUpperCase();
-            zipcode = rand.nextInt(90000) + 10000; //generates a zipcode from 10000-99999
-            int num1 = rand.nextInt(900)+100;
-            int num2 = rand.nextInt(900)+100;
-            int num3 = rand.nextInt(9000)+100;
-            String phone_Num = num1 +"-"+ num2+"-"+num3;
-            String signup_Date = generateDate();
-            active_discount = rand.nextInt(20);
-            debt = rand.nextInt(40000); //arbitrary
-            ytdPurchaseTotal = rand.nextInt(200000);
-            num_payments = rand.nextInt(100);
-            num_deliveries = rand.nextInt(100);
-            //do a sql insert here using the JDBC
-            Statement st = connection.createStatement();
-            System.out.println("");
-            String insQuery = ("INSERT INTO Customers VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-            PreparedStatement ps = connection.prepareStatement(insQuery);
-            ps.setLong(1, wh_ID);
-            ps.setLong(2, ds_ID);
-            ps.setLong(3, cust_ID);
-            ps.setString(4, first_Name);
-            ps.setString(5, middle_Init);
-            ps.setString(6, last_Name);
-            ps.setString(7, street_Address);
-            ps.setString(8, city);
-            ps.setString(9, state);
-            ps.setLong(10, zipcode);
-            ps.setString(11, phone_Num);
-            ps.setString(12, signup_Date);
-            ps.setLong(13, active_discount);
-            ps.setLong(14, debt);
-            ps.setLong(15, ytdPurchaseTotal);
-            ps.setLong(16, num_payments);
-            ps.setLong(17, num_deliveries);
-            ps.executeUpdate();
+        for(int x = 0; x < numWH; x++) {
+            for(int y = 0; y < numDS; y++) {
+                for(int z = 0; z < numCust; z++) {
+                    //generate the data
+                    wh_ID = x+1;
+                    ds_ID = y+1;
+                    cust_ID = z+1;
+                    String first_Name = generateString(8); //could make first letter capital at some point
+                    String middle_Init = generateString(1);
+                    String last_Name = generateString(10);
+                    String street_Address = alphaNumString();
+                    String city = generateString(7);
+                    String state = generateString(2);
+                    state = state.toUpperCase();
+                    zipcode = rand.nextInt(90000) + 10000; //generates a zipcode from 10000-99999
+                    int num1 = rand.nextInt(900)+100;
+                    int num2 = rand.nextInt(900)+100;
+                    int num3 = rand.nextInt(9000)+100;
+                    String phone_Num = num1 +"-"+ num2+"-"+num3;
+                    String signup_Date = generateDate();
+                    active_discount = rand.nextInt(20);
+                    debt = rand.nextInt(40000); //arbitrary
+                    ytdPurchaseTotal = rand.nextInt(200000);
+                    num_payments = rand.nextInt(100);
+                    num_deliveries = rand.nextInt(100);
+                    //do a sql insert here using the JDBC
+                    Statement st = connection.createStatement();
+                    System.out.println("");
+                    String insQuery = ("INSERT INTO Customers VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                    PreparedStatement ps = connection.prepareStatement(insQuery);
+                    ps.setLong(1, wh_ID);
+                    ps.setLong(2, ds_ID);
+                    ps.setLong(3, cust_ID);
+                    ps.setString(4, first_Name);
+                    ps.setString(5, middle_Init);
+                    ps.setString(6, last_Name);
+                    ps.setString(7, street_Address);
+                    ps.setString(8, city);
+                    ps.setString(9, state);
+                    ps.setLong(10, zipcode);
+                    ps.setString(11, phone_Num);
+                    ps.setString(12, signup_Date);
+                    ps.setLong(13, active_discount);
+                    ps.setLong(14, debt);
+                    ps.setLong(15, ytdPurchaseTotal);
+                    ps.setLong(16, num_payments);
+                    ps.setLong(17, num_deliveries);
+                    ps.executeUpdate();
+                }
+            }
         }
     }
-    public static void GenOrderData(int numDataToGen) throws SQLException{
+    public static void GenOrderData(int numWH, int numDS, int numCust, int numOrders) throws SQLException{
     	Random rand = new Random();
-       	int ds_ID;
-    	int cust_ID;
-    	int order_ID;
-    	int num_Items;
-       	for(int x = 0; x < numDataToGen; x++) {
-            //generate the data
-            ds_ID = x+2; //arbitrary
-            cust_ID = rand.nextInt(1000);
-            order_ID = rand.nextInt(50000);
-            String date_Placed = generateDate();
-            String completed_Flag = "Completed";
-            num_Items = rand.nextInt(80);
-            //do a sql insert here using the JDBC
-            Statement st= connection.createStatement();
-            System.out.println("");
-            String insQuery = ("INSERT INTO Orders VALUES (?,?,?,?,?,?)");
-            PreparedStatement ps = connection.prepareStatement(insQuery);
-            ps.setLong(1, ds_ID);
-            ps.setLong(2, cust_ID);
-            ps.setLong(3, order_ID);
-            ps.setString(4, date_Placed);
-            ps.setString(5, completed_Flag);
-            ps.setLong(6, num_Items);
-            ps.executeUpdate();
-        }
-    }
-    public static void GenLineItemData(int numDataToGen) throws SQLException{
-    	Random rand = new Random();
+       	int wh_ID;
+        int ds_ID;
         int cust_ID;
     	int order_ID;
+    	int num_Items;
+        for(int w = 0; w < numWH; w++) {
+            for(int x = 0; x < numDS; x++) {
+                for(int y = 0; y < numCust; y++) {
+                    for(int z = 0; z < numOrders; z++) {            
+                        wh_ID = w+1;
+                        ds_ID = x+1;
+                        cust_ID = y+1;
+                        order_ID = z+1;
+                        String date_Placed = generateDate();
+                        String completed_Flag = "Completed";
+                        num_Items = rand.nextInt(80);
+                        //do a sql insert here using the JDBC
+                        Statement st= connection.createStatement();
+                        System.out.println("");
+                        String insQuery = ("INSERT INTO Orders VALUES (?,?,?,?,?,?,?)");
+                        PreparedStatement ps = connection.prepareStatement(insQuery);
+                        ps.setLong(1, wh_ID);
+                        ps.setLong(2, ds_ID);
+                        ps.setLong(3, cust_ID);
+                        ps.setLong(4, order_ID);
+                        ps.setString(5, date_Placed);
+                        ps.setString(6, completed_Flag);
+                        ps.setLong(7, num_Items);
+                        ps.executeUpdate();
+                    }
+                }
+            }
+        }
+    }
+    public static void GenLineItemData(int numWH, int numDS, int numCust, int numOrders, int numLIs) throws SQLException{
+    	Random rand = new Random();
+        int wh_ID;
+        int ds_ID;
+        int cust_ID;
+        int order_ID;
     	int li_ID;
     	int item_ID;
     	int quantity;
     	int total_Cost;
-        for(int x = 0; x < numDataToGen; x++) {
-            //generate the data
-            cust_ID = rand.nextInt(1000);
-            order_ID = rand.nextInt(50000);
-            li_ID = rand.nextInt(50000);
-            item_ID = rand.nextInt(100000);
-            quantity = rand.nextInt(3000);
-            total_Cost = rand.nextInt(2000);
-            String date_Delivered = generateDate();
-            //do a sql insert here using the JDBC
-            Statement st= connection.createStatement();
-            System.out.println("");
-            String insQuery = ("INSERT INTO LineItems VALUES (?,?,?,?,?,?,?)");
-            PreparedStatement ps = connection.prepareStatement(insQuery);
-            ps.setLong(1, cust_ID);
-            ps.setLong(2, order_ID);
-            ps.setLong(3, li_ID);
-            ps.setLong(4, item_ID);
-            ps.setLong(5, quantity);
-            ps.setLong(6, total_Cost);
-            ps.setString(7, date_Delivered);
-            ps.executeUpdate();
+        for(int w = 0; w < numWH; w++) {
+            for(int x = 0; x < numDS; x++) {
+                for(int y = 0; y < numCust; y++) {
+                    for(int z = 0; z < numOrders; z++) {
+                        for(int a = 0; a < numLIs; a++) {
+                            //generate the data
+                            wh_ID = x+1;
+                            ds_ID = x+1;
+                            cust_ID = x+1;
+                            order_ID = x+1;
+                            li_ID = x+1;
+                            item_ID = rand.nextInt(500);
+                            quantity = rand.nextInt(3000);
+                            total_Cost = rand.nextInt(2000);
+                            String date_Delivered = generateDate();
+                            //do a sql insert here using the JDBC
+                            Statement st= connection.createStatement();
+                            System.out.println("");
+                            String insQuery = ("INSERT INTO LineItems VALUES (?,?,?,?,?,?,?,?,?)");
+                            PreparedStatement ps = connection.prepareStatement(insQuery);
+                            ps.setLong(1, cust_ID);
+                            ps.setLong(2, order_ID);
+                            ps.setLong(3, cust_ID);
+                            ps.setLong(4, order_ID);
+                            ps.setLong(5, li_ID);
+                            ps.setLong(6, item_ID);
+                            ps.setLong(7, quantity);
+                            ps.setLong(8, total_Cost);
+                            ps.setString(9, date_Delivered);
+                            ps.executeUpdate();
+                        }
+                    }
+                }
+            }
         }
     }
-    public static void GenItemData(int numDataToGen) throws SQLException{
+    public static void GenItemData(int numItems) throws SQLException{
     	Random rand = new Random();
         int item_ID;
         float price; //Also needs a function to generate dollars and cents
-        for(int x = 0; x < numDataToGen; x++) {
+        for(int x = 0; x < numItems; x++) {
             //generate the data
-            item_ID = rand.nextInt(100000);
+            item_ID = x+1;
             String item_Name = generateString(15);
             int dollars = rand.nextInt(90000) + 1000;
             int cents = rand.nextInt(90)+10;
@@ -310,31 +336,33 @@ public class GroceryDeliveryDB {
             ps.executeUpdate();
         }
     }
-    public static void GenStockData(int numDataToGen) throws SQLException{
+    public static void GenStockData(int numWH, int numItems) throws SQLException{
     	Random rand = new Random();
         int wh_ID;
         int item_ID;
         int quantity_avail;
         int quantity_sold;
         int num_orders;
-        for(int x = 0; x < numDataToGen; x++) {
-            //generate the data
-            wh_ID = x+1;
-            item_ID = rand.nextInt(100000);
-            quantity_avail = rand.nextInt(5000);
-            quantity_sold = rand.nextInt(5000);
-            num_orders = rand.nextInt(20000);
-            //do a sql insert here using the JDBC
-            Statement st= connection.createStatement();
-            System.out.println("");
-            String insQuery = ("INSERT INTO Stock VALUES (?,?,?,?,?)");
-            PreparedStatement ps = connection.prepareStatement(insQuery);
-            ps.setLong(1, wh_ID);
-            ps.setLong(2, item_ID);
-            ps.setLong(3, quantity_avail);
-            ps.setLong(4, quantity_sold);
-            ps.setLong(5, num_orders);
-            ps.executeUpdate();
+        for(int x = 0; x < numWH; x++) {
+            for(int y = 0; y < numItems; y++) {
+                //generate the data
+                wh_ID = x+1;
+                item_ID = x+1;
+                quantity_avail = rand.nextInt(5000);
+                quantity_sold = rand.nextInt(5000);
+                num_orders = rand.nextInt(20000);
+                //do a sql insert here using the JDBC
+                Statement st= connection.createStatement();
+                System.out.println("");
+                String insQuery = ("INSERT INTO Stock VALUES (?,?,?,?,?)");
+                PreparedStatement ps = connection.prepareStatement(insQuery);
+                ps.setLong(1, wh_ID);
+                ps.setLong(2, item_ID);
+                ps.setLong(3, quantity_avail);
+                ps.setLong(4, quantity_sold);
+                ps.setLong(5, num_orders);
+                ps.executeUpdate();
+            }
         }
     }
     //This will generate a random string of characters

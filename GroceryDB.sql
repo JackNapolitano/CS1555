@@ -1,14 +1,13 @@
 --Drop Tables
---uncomment to re run .sql
-/*
-DROP TABLE Stock;
-DROP TABLE LineItems;
-DROP TABLE Items;
-DROP TABLE Orders;
-DROP TABLE Customers;
-DROP TABLE DistStation;
-DROP TABLE Warehouse;
-*/
+
+--DROP TABLE Stock;
+--DROP TABLE LineItems;
+--DROP TABLE Items;
+--DROP TABLE Orders;
+--DROP TABLE Customers;
+--DROP TABLE DistStation;
+--DROP TABLE Warehouse;
+
 
 
 CREATE TABLE Warehouse (
