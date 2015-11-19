@@ -42,14 +42,14 @@ public class GroceryDeliveryDB {
         
         while(true) {
             System.out.println("------------------------------------------------------\nWelcome to the Grocery Delivery System. Select how you \nwould like to interact with the system:\n------------------------------------------------------");
-            System.out.print("1 - \tGenerate/Reset Data\n2 - \tPlace an order:\n3 - \tView databases:\n4 - \tblah:\n5 - \tExit Application:\nEnter a number: ");
+            System.out.print("1 - \tCreate Database (no drop table statements)\n2 - \tReset DB, Generate Data\n3 - \tView databases:\n4 - \tblah:\n5 - \tExit Application:\nEnter a number: ");
             int n = reader.nextInt();
             switch(n) {
                 case 1:
-                    GenData();
+                    genDB();
                     break;
                 case 2:
-                    System.out.println("Not Implemented");
+                    GenData();
                     break;
                 case 3:
                     viewDB();
@@ -502,4 +502,42 @@ public class GroceryDeliveryDB {
 		}
 	
 	}
+    public static void genDB() throws SQLException {
+        System.out.println("Reseting the database...");
+        String s = new String();
+        StringBuffer sb = new StringBuffer();
+        
+        try {
+            FileReader f = new FileReader(new File("GroceryDB1.sql"));
+            
+            BufferedReader br = new BufferedReader(f);
+            
+            while((s=br.readLine())!= null) {
+                sb.append(s);   //build the sql statement
+            }
+            br.close();
+            
+            
+            //split each request
+            String[] rqts = sb.toString().split(";");
+            
+            if(connection != null) {
+                Statement st = connection.createStatement();
+                
+                for (int i=0; i<rqts.length; i++) {
+                    if(!rqts[i].trim().equals("")) {
+                        st.execute(rqts[i]);
+                        //System.out.println(">>"+rqts[i]);
+                    }
+                }
+            }
+        }
+        catch(Exception e) {
+            System.out.println("Error: "+ e.toString());
+            System.out.println("Error: ");
+            e.printStackTrace();
+            System.out.println(sb.toString());
+        }
+    
+    }
 }
