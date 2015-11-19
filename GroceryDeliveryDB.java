@@ -68,8 +68,8 @@ public class GroceryDeliveryDB {
     public static void GenData() { 
         //create tables from .sql file
 		try {
-            System.out.println("Creating the database...");
 			resetDatabase();
+            System.out.println("Creating the database...");
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -77,14 +77,15 @@ public class GroceryDeliveryDB {
 		
         //gen the data for the db
 		try{
-            System.out.println("Generating data for the database...");
+            System.out.println("Generating data for the database... (takes about 20 seconds)");
             GenItemData(50);//500 unique grocery items
 	        GenWarehouseData(10); //we chose 20 warehouses as it is a logical number of warehouses
 	        GenDistStationData(10, 10);//20 warehouses, 10 DS per HW
 	        GenCustomerData(10, 10, 10);//20 warehouses, 10 DistStations per HW, 15 customers per DS
 	        GenOrderData(10, 10, 10, 5);//20 warehouses, 10 DistStations per HW, 15 customers per DS, 5 orders per cust
-            GenStockData(10, 50);	
             GenLineItemData(10, 10, 10, 5, 3);//20 warehouses, 10 DistStations per HW, 15 customers per DS, 5 orders per cust, 3 line items per cust
+            GenStockData(10, 50);   
+
 
 		}
 		catch (SQLException e){
@@ -348,7 +349,7 @@ public class GroceryDeliveryDB {
             for(int y = 0; y < numItems; y++) {
                 //generate the data
                 wh_ID = x;
-                item_ID = x;
+                item_ID = y;
                 quantity_avail = rand.nextInt(5000);
                 quantity_sold = rand.nextInt(5000);
                 num_orders = rand.nextInt(20000);
