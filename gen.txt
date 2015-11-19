@@ -1,7 +1,10 @@
 This is a high level overview of how we chose to populate each attribute of our schema.
 
+All ID values can be set to any numbers from the function call. We kept the values relatively low
+to reduce the runtime of the insers. Currently takes about 20 seconds.
+
 Warehouse:
-  - WH-ID: Started at 1, each new entry into the relation was one higher
+  - WH-ID: Started at 0, each new entry into the relation is one higher
   - Warehouse_Name: Random String of arbitrary length
   - Street_Address: Random street number + random string for street name + random selection of Rd. St. or Ave.
   - City: Random String of arbitrary length
@@ -11,8 +14,8 @@ Warehouse:
   - YTD_Sales_Sum: Random int
 
 DistStation:
-  - WH_ID: Started at 1, each new entry into the relation was one higher
-  - DS_ID: Arbitrary for now
+  - WH_ID: Starts at 0, increments
+  - DS_ID: Starts at 0 on a per WH basis and increments
   - DS_Name: Random String
   - Street_Address: Random street number + random string for street name + random selection of Rd. St. or Ave.
   - City: Random String
@@ -22,8 +25,9 @@ DistStation:
   - YTD_Sales_Sum: Random int
   
 Customers:
-  - WH_ID: Started at 1, each new entry into the relation was one higher
-  - DS_ID: Arbitrary for now
+  - WH_ID: Starts at 0, increments
+  - DS_ID: Starts at 0 on a per WH basis and increments
+  - Cust_ID: Starts at 0 and increments for every unique WH_ID/DS_ID pair
   - First_Name: Random String
   - Middle_Initial: Random String of length 1
   - Last_Name: Random String
@@ -40,30 +44,33 @@ Customers:
   - Num_Deliveries: Random int
 
 Orders:
-  - DS_ID: Arbitrary for now
-  - Cust_ID: Random int
-  - Order_ID: Random int
+  - WH_ID: Starts at 0, increments
+  - DS_ID: Starts at 0 on a per WH basis and increments
+  - Cust_ID: Starts at 0 and increments for every unique WH_ID/DS_ID pair
+  - Order_ID: Starts at 0 and increments for every unique WH_ID/DS_ID/Cust_ID pair
   - Date_Placed: In the form DD-MON-YY, day was randomly generated but only includes valid days, month was randomly selected, and year was randomly selected between 14 and 15 for now
   - Completed_Flag: Set to "Completed" for now, we assumed all orders were completed
   - Num_Items: Random int
   
 Items:
-  - Item_ID: Random int
+  - Item_ID: Starts at 0, increments
   - Item_Name: Random String
   - Price: Random float in the form dollars.cents
   
 LineItems:
-  - Cust_ID: Random int
-  - Order_ID: Random int
-  - LI_ID: Random int
-  - Item_ID: Random int
+  - WH_ID: Starts at 0, increments
+  - DS_ID: Starts at 0 on a per WH basis and increments
+  - Cust_ID: Starts at 0 and increments for every unique WH_ID/DS_ID pair
+  - Order_ID: Starts at 0 and increments for every unique WH_ID/DS_ID/Cust_ID pair
+  - LI_ID:  Starts at 0 and increments for every unique WH_ID/DS_ID/Cust_ID/Order_ID pair
+  - Item_ID: Starts at 0, increments
   - Quantity: Random int
   - Total_Cost: Random int
   - Date_Delivered: In the form DD-MON-YY, day was randomly generated but only includes valid days, month was randomly selected, and year was randomly selected between 14 and 15 for now
   
 Stock:
-  - WH_ID: Started at 1, each new entry into the relation was one higher
-  - Item_ID: Random int
+  - WH_ID: Starts at 0, increments
+  - Item_ID: Starts at 0, increments
   - Quantity_Available: Random int
   - Quantity_Sold: Random int
   - Num_Orders: Random int
