@@ -25,6 +25,10 @@ public class GroceryDeliveryDB {
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
     private String query;
+	private static int warehouses;
+	private static int distPerWarehouse;
+	private static int custPerDist;
+	
    	public static void main(String[] args) throws SQLException, ClassNotFoundException {
         Scanner reader = new Scanner(System.in);  // Reading from System.in
        //Should we prompt user instead of hard coding this??
@@ -42,7 +46,7 @@ public class GroceryDeliveryDB {
         
         while(true) {
             System.out.println("------------------------------------------------------\nWelcome to the Grocery Delivery System. Select how you \nwould like to interact with the system:\n------------------------------------------------------");
-            System.out.print("1 - \tCreate Database (no drop table statements)\n2 - \tReset DB, Generate Data\n3 - \tView databases:\n4 - \tblah:\n5 - \tExit Application:\nEnter a number: ");
+            System.out.print("1 - \tCreate Database (no drop table statements)\n2 - \tReset DB, Generate Data\n3 - \tView databases\n4 - \tNew Order\n5 - \tMake a payment\n6- \tCheck order status\n7- \tDelivery transaction\n8- \tStock transaction\n9- \tExit Application\nEnter a number: ");
             int n = reader.nextInt();
             switch(n) {
                 case 1:
@@ -57,7 +61,19 @@ public class GroceryDeliveryDB {
                 case 4:
                     System.out.println("Not Implemented");
                     break;
-                case 5:
+				case 5:
+					System.out.println("Not Implemented");
+                    break;
+				case 6:
+					System.out.println("Not Implemented");
+                    break;
+			    case 7:
+				    System.out.println("Not Implemented");
+                    break;
+				case 8:
+					System.out.println("Not Implemented");
+                    break;
+                case 9:
                 	connection.close();
                 	System.out.println("Connection closed.");
                     System.exit(0);
@@ -77,14 +93,21 @@ public class GroceryDeliveryDB {
 		
         //gen the data for the db
 		try{
-            System.out.println("Generating data for the database... (takes about 20 seconds)");
-            GenItemData(50);//500 unique grocery items
-	        GenWarehouseData(10); //we chose 20 warehouses as it is a logical number of warehouses
-	        GenDistStationData(10, 10);//20 warehouses, 10 DS per HW
-	        GenCustomerData(10, 10, 10);//20 warehouses, 10 DistStations per HW, 15 customers per DS
-	        GenOrderData(10, 10, 10, 5);//20 warehouses, 10 DistStations per HW, 15 customers per DS, 5 orders per cust
-            GenLineItemData(10, 10, 10, 5, 3);//20 warehouses, 10 DistStations per HW, 15 customers per DS, 5 orders per cust, 3 line items per cust
-            GenStockData(10, 50);   
+            System.out.println("Generating data for the database... (takes a few minutes)");
+			System.out.println("Generating items...");
+            GenItemData(10000);//10000 unique grocery items
+	        System.out.println("Generating warehouse...");
+			GenWarehouseData(1); //we chose 20 warehouses as it is a logical number of warehouses
+			System.out.println("Generating distribution stations...");
+	        GenDistStationData(8);//8 DS per HW
+			System.out.println("Generating customers...");
+	        GenCustomerData(3000);//3000 customers per DS
+			System.out.println("Generating orders...");
+	        GenOrderData(100);// between 1-100 orders per cust
+			System.out.println("Generating line items...");
+            GenLineItemData(5, 3);//5 orders per cust, 3 line items per cust
+			System.out.println("Generating stock entries...");
+            GenStockData(10000);//10000 stock listings per warehouse
 
 
 		}
@@ -93,6 +116,7 @@ public class GroceryDeliveryDB {
 		}
     }
     public static void GenWarehouseData(int numWH) throws SQLException{
+		warehouses = numWH;
         Random rand = new Random();
         int wh_ID;
         int zipcode;
@@ -129,14 +153,15 @@ public class GroceryDeliveryDB {
             //System.out.println("WH_ID: "+ wh_ID+ "\nWarehouse_Name: "+ wh_Name+ "\nStreet_Address: "+ street_Address+ "\nCity: "+ city+ "\nState: "+ state + "\nZipcode: "+ zipcode + "\nTax Rate:" + taxrate+ "\nYTD_Sales_Sum: " +ytdSalesSum);
         }
     }
-    public static void GenDistStationData(int numWH, int numDS) throws SQLException{
+    public static void GenDistStationData(int numDS) throws SQLException{
+		distPerWarehouse = numDS;
     	Random rand = new Random();
     	int wh_ID;
     	int ds_ID;
     	int zipcode;
     	int taxrate;
     	float ytdSalesSum;
-    	for(int x = 0; x < numWH; x++) {
+    	for(int x = 0; x < warehouses; x++) {
             for(int y = 0; y < numDS; y++) {
                 //generate the data
                 wh_ID = x; //In dealing with PK's and FK's, I assume we'll need a way to sync these for each table i.e. wh_ID's should match up
@@ -170,7 +195,8 @@ public class GroceryDeliveryDB {
             }
         }
     }
-    public static void GenCustomerData(int numWH, int numDS, int numCust) throws SQLException{
+    public static void GenCustomerData(int numCust) throws SQLException{
+		custPerDist = numCust;
     	Random rand = new Random();
         int wh_ID;
     	int ds_ID;
@@ -181,8 +207,8 @@ public class GroceryDeliveryDB {
     	int ytdPurchaseTotal;
     	int num_payments;
     	int num_deliveries;
-        for(int x = 0; x < numWH; x++) {
-            for(int y = 0; y < numDS; y++) {
+        for(int x = 0; x < warehouses; x++) {
+            for(int y = 0; y < distPerWarehouse; y++) {
                 for(int z = 0; z < numCust; z++) {
                     //generate the data
                     wh_ID = x;
@@ -233,17 +259,18 @@ public class GroceryDeliveryDB {
             }
         }
     }
-    public static void GenOrderData(int numWH, int numDS, int numCust, int numOrders) throws SQLException{
+    public static void GenOrderData(int numOrders) throws SQLException{
     	Random rand = new Random();
-       	int wh_ID;
+		int wh_ID;
         int ds_ID;
         int cust_ID;
     	int order_ID;
     	int num_Items;
-        for(int w = 0; w < numWH; w++) {
-            for(int x = 0; x < numDS; x++) {
-                for(int y = 0; y < numCust; y++) {
-                    for(int z = 0; z < numOrders; z++) {            
+        for(int w = 0; w < warehouses; w++) {
+            for(int x = 0; x < distPerWarehouse; x++) {
+                for(int y = 0; y < custPerDist; y++) {
+					int numOrd = rand.nextInt(numOrders) + 1; //generates a number of orders from 1-100 for each cust
+                    for(int z = 0; z < numOrd; z++) {            
                         wh_ID = w;
                         ds_ID = x;
                         cust_ID = y;
@@ -269,7 +296,7 @@ public class GroceryDeliveryDB {
             }
         }
     }
-    public static void GenLineItemData(int numWH, int numDS, int numCust, int numOrders, int numLIs) throws SQLException{
+    public static void GenLineItemData(int numOrders, int numLIs) throws SQLException{
     	Random rand = new Random();
         int wh_ID;
         int ds_ID;
@@ -279,11 +306,12 @@ public class GroceryDeliveryDB {
     	int item_ID;
     	int quantity;
     	int total_Cost;
-        for(int w = 0; w < numWH; w++) {
-            for(int x = 0; x < numDS; x++) {
-                for(int y = 0; y < numCust; y++) {
+        for(int w = 0; w < warehouses; w++) {
+            for(int x = 0; x < distPerWarehouse; x++) {
+                for(int y = 0; y < custPerDist; y++) {
                     for(int z = 0; z < numOrders; z++) {
-                        for(int a = 0; a < numLIs; a++) {
+                	int numLItems = rand.nextInt((15-5)+1) + 5; //generates random number of line items from 5-15
+                        for(int a = 0; a < numLItems; a++) {
                             //generate the data
                             wh_ID = w;
                             ds_ID = x;
@@ -338,14 +366,14 @@ public class GroceryDeliveryDB {
             ps.close();
         }
     }
-    public static void GenStockData(int numWH, int numItems) throws SQLException{
+    public static void GenStockData(int numItems) throws SQLException{
     	Random rand = new Random();
         int wh_ID;
         int item_ID;
         int quantity_avail;
         int quantity_sold;
         int num_orders;
-        for(int x = 0; x < numWH; x++) {
+        for(int x = 0; x < warehouses; x++) {
             for(int y = 0; y < numItems; y++) {
                 //generate the data
                 wh_ID = x;
