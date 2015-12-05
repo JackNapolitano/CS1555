@@ -156,7 +156,6 @@ public class GroceryDeliveryDB {
 															// 0.0-1.0 FIXED
 															// 11/17 see above
 			// do a sql insert here using the JDBC
-			Statement st = connection.createStatement();
 			String insQuery = ("INSERT INTO Warehouse VALUES (?,?,?,?,?,?,?,?)");
 			PreparedStatement ps = connection.prepareStatement(insQuery);
 			ps.setLong(1, wh_ID);
@@ -206,7 +205,6 @@ public class GroceryDeliveryDB {
 				String ytdSalesString = dollars + "." + cents;
 				ytdSalesSum = Float.parseFloat(ytdSalesString);
 				// do a sql insert here using the JDBC
-				Statement st = connection.createStatement();
 				String insQuery = ("INSERT INTO DistStation VALUES (?,?,?,?,?,?,?,?,?)");
 				PreparedStatement ps = connection.prepareStatement(insQuery);
 				ps.setLong(1, wh_ID);
@@ -267,7 +265,6 @@ public class GroceryDeliveryDB {
 					num_payments = rand.nextInt(100);
 					num_deliveries = rand.nextInt(100);
 					// do a sql insert here using the JDBC
-					Statement st = connection.createStatement();
 					String insQuery = ("INSERT INTO Customers VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 					PreparedStatement ps = connection
 							.prepareStatement(insQuery);
@@ -351,7 +348,6 @@ public class GroceryDeliveryDB {
 							int total_Cost = rand.nextInt(2000);
 							String date_Delivered = generateDate();
 							// do a sql insert here using the JDBC
-							Statement st = connection.createStatement();
 							String insLIQuery = ("INSERT INTO LineItems VALUES (?,?,?,?,?,?,?,?,?)");
 							PreparedStatement psLI = connection
 									.prepareStatement(insLIQuery);
@@ -446,7 +442,6 @@ public class GroceryDeliveryDB {
 			String priceString = dollars + "." + cents;
 			price = Float.parseFloat(priceString);
 			// do a sql insert here using the JDBC
-			Statement st = connection.createStatement();
 			String insQuery = ("INSERT INTO Items VALUES (?,?,?)");
 			PreparedStatement ps = connection.prepareStatement(insQuery);
 			ps.setLong(1, item_ID);
@@ -474,7 +469,6 @@ public class GroceryDeliveryDB {
 				quantity_sold = rand.nextInt(5000);
 				num_orders = rand.nextInt(20000);
 				// do a sql insert here using the JDBC
-				Statement st = connection.createStatement();
 				String insQuery = ("INSERT INTO Stock VALUES (?,?,?,?,?)");
 				PreparedStatement ps = connection.prepareStatement(insQuery);
 				ps.setLong(1, wh_ID);
@@ -731,7 +725,7 @@ public class GroceryDeliveryDB {
 		ytdPrep.setLong(1, wh_id);
 		ytdPrep.setLong(2, ds_id);
 		ResultSet ytdRS = ytdPrep.executeQuery();
-		double ytdSalesSum = ytdRS.getDouble(1);
+		float ytdSalesSum = ytdRS.getFloat(1);
 
 		if (payAmt >= debtAmt) {
 			double extra = payAmt - debtAmt;
@@ -745,6 +739,12 @@ public class GroceryDeliveryDB {
 			System.out.println("A payment of $" + debtAmt
 					+ " has been applied to your account and $" + extra
 					+ " has been refunded to you. Your current debt is $0.");
+			ytdSalesSum = ytdSalesSum + (float)debtAmt;
+			String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
+			PreparedStatement ytdp = connection.prepareStatement(updateYTD);
+			ytdp.setFloat(1, ytdSalesSum);
+			ytdp.setLong(2, wh_id);
+			ytdp.setLong(3, ds_id);
 		} else {
 			double newDebt = debtAmt - payAmt;
 
