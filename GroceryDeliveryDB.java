@@ -793,11 +793,12 @@ public class GroceryDeliveryDB {
 
 				if (payAmt >= debtAmt) {
 					double extra = payAmt - debtAmt;
-					String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=?");
+					String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=? AND DS_ID=?");
 					PreparedStatement prep = connection
 							.prepareStatement(updateQuery);
 					prep.setLong(1, 0);
 					prep.setInt(2, custID);
+					prep.setInt(3, ds_id);
 					prep.executeUpdate();
 					prep.close();
 					prep = null;
@@ -818,11 +819,12 @@ public class GroceryDeliveryDB {
 
 				} else {
 					float newDebt = (float) debtAmt - (float) payAmt;
-					String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=?");
+					String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=? AND DS_ID=?");
 					PreparedStatement prep = connection
 							.prepareStatement(updateQuery);
 					prep.setFloat(1, newDebt);
 					prep.setInt(2, custID);
+					prep.setInt(3, ds_id);
 					prep.executeUpdate();
 					prep.close();
 					prep = null;
