@@ -71,13 +71,13 @@ public class GroceryDeliveryDB {
 				makePayment();
 				break;
 			case 6:
-				System.out.println("Not Implemented");
+				checkOrderStatus();
 				break;
 			case 7:
-				System.out.println("Not Implemented");
+				deliverItems();
 				break;
 			case 8:
-				System.out.println("Not Implemented");
+				checkStockLevels();
 				break;
 			case 9:
 				connection.close();
@@ -103,20 +103,20 @@ public class GroceryDeliveryDB {
 			System.out
 					.println("Generating data for the database... (takes a few minutes)");
 			System.out.println("Generating items...");
-			GenItemData(10000);// 10000 unique grocery items
+			GenItemData(100);// 10000 unique grocery items
 			System.out.println("Generating warehouse...");
 			GenWarehouseData(1); // we chose 20 warehouses as it is a logical
 									// number of warehouses
 			System.out.println("Generating distribution stations...");
-			GenDistStationData(8);// 8 DS per HW
+			GenDistStationData(3);// 8 DS per HW
 			System.out.println("Generating customers...");
-			GenCustomerData(3000);// 3000 customers per DS
+			GenCustomerData(10);// 3000 customers per DS
 			System.out.println("Generating orders and line items...");
-			GenOrderData(100);// between 1-100 orders per cust
-//			System.out.println("Generating line items...");
-//			GenLineItemData(5, 3);// 5 orders per cust, 3 line items per cust
+			GenOrderData(100);// between 1-100 orders per cust3
+			// System.out.println("Generating line items...");
+			// GenLineItemData(5, 3);// 5 orders per cust, 3 line items per cust
 			System.out.println("Generating stock entries...");
-			GenStockData(10000);// 10000 stock listings per warehouse
+			GenStockData(100);// 10000 stock listings per warehouse
 
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -303,6 +303,7 @@ public class GroceryDeliveryDB {
 		for (int w = 0; w < warehouses; w++) {
 			for (int x = 0; x < distPerWarehouse; x++) {
 				for (int y = 0; y < custPerDist; y++) {
+					System.out.println("Customer " + y);
 					int numOrd = rand.nextInt(numOrders) + 1; // generates a
 																// number of
 																// orders from
@@ -371,63 +372,63 @@ public class GroceryDeliveryDB {
 		}
 	}
 
-//	public static void GenLineItemData(int numOrders, int numLIs)
-//			throws SQLException {
-//		Random rand = new Random();
-//		int wh_ID;
-//		int ds_ID;
-//		int cust_ID;
-//		int order_ID;
-//		int li_ID;
-//		int item_ID;
-//		int quantity;
-//		int total_Cost;
-//		for (int w = 0; w < warehouses; w++) {
-//			for (int x = 0; x < distPerWarehouse; x++) {
-//				for (int y = 0; y < custPerDist; y++) {
-//					for (int z = 0; z < numOrders; z++) {
-//						int numLItems = rand.nextInt((15 - 5) + 1) + 5; // generates
-//																		// random
-//																		// number
-//																		// of
-//																		// line
-//																		// items
-//																		// from
-//																		// 5-15
-//						for (int a = 0; a < numLItems; a++) {
-//							// generate the data
-//							wh_ID = w;
-//							ds_ID = x;
-//							cust_ID = y;
-//							order_ID = z;
-//							li_ID = a;
-//							item_ID = rand.nextInt(30);
-//							quantity = rand.nextInt(3000);
-//							total_Cost = rand.nextInt(2000);
-//							String date_Delivered = generateDate();
-//							// do a sql insert here using the JDBC
-//							Statement st = connection.createStatement();
-//							String insQuery = ("INSERT INTO LineItems VALUES (?,?,?,?,?,?,?,?,?)");
-//							PreparedStatement ps = connection
-//									.prepareStatement(insQuery);
-//							ps.setLong(1, wh_ID);
-//							ps.setLong(2, ds_ID);
-//							ps.setLong(3, cust_ID);
-//							ps.setLong(4, order_ID);
-//							ps.setLong(5, li_ID);
-//							ps.setLong(6, item_ID);
-//							ps.setLong(7, quantity);
-//							ps.setLong(8, total_Cost);
-//							ps.setString(9, date_Delivered);
-//							ps.executeUpdate();
-//							ps.close();
-//							ps = null;
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
+	// public static void GenLineItemData(int numOrders, int numLIs)
+	// throws SQLException {
+	// Random rand = new Random();
+	// int wh_ID;
+	// int ds_ID;
+	// int cust_ID;
+	// int order_ID;
+	// int li_ID;
+	// int item_ID;
+	// int quantity;
+	// int total_Cost;
+	// for (int w = 0; w < warehouses; w++) {
+	// for (int x = 0; x < distPerWarehouse; x++) {
+	// for (int y = 0; y < custPerDist; y++) {
+	// for (int z = 0; z < numOrders; z++) {
+	// int numLItems = rand.nextInt((15 - 5) + 1) + 5; // generates
+	// // random
+	// // number
+	// // of
+	// // line
+	// // items
+	// // from
+	// // 5-15
+	// for (int a = 0; a < numLItems; a++) {
+	// // generate the data
+	// wh_ID = w;
+	// ds_ID = x;
+	// cust_ID = y;
+	// order_ID = z;
+	// li_ID = a;
+	// item_ID = rand.nextInt(30);
+	// quantity = rand.nextInt(3000);
+	// total_Cost = rand.nextInt(2000);
+	// String date_Delivered = generateDate();
+	// // do a sql insert here using the JDBC
+	// Statement st = connection.createStatement();
+	// String insQuery = ("INSERT INTO LineItems VALUES (?,?,?,?,?,?,?,?,?)");
+	// PreparedStatement ps = connection
+	// .prepareStatement(insQuery);
+	// ps.setLong(1, wh_ID);
+	// ps.setLong(2, ds_ID);
+	// ps.setLong(3, cust_ID);
+	// ps.setLong(4, order_ID);
+	// ps.setLong(5, li_ID);
+	// ps.setLong(6, item_ID);
+	// ps.setLong(7, quantity);
+	// ps.setLong(8, total_Cost);
+	// ps.setString(9, date_Delivered);
+	// ps.executeUpdate();
+	// ps.close();
+	// ps = null;
+	// }
+	// }
+	// }
+	// }
+	// }
+	// }
 
 	public static void GenItemData(int numItems) throws SQLException {
 		Random rand = new Random();
@@ -573,10 +574,57 @@ public class GroceryDeliveryDB {
 		System.out
 				.println("--------------------------------------------------------------------------------------------------");
 		while (rs.next()) {
-			String format2 = "%-7s%-16s%-20s%-12s%-7s%-10s%-12s%-17s%n";
-			System.out.printf(format2, rs.getLong(1), rs.getString(2),
+			System.out.printf(format, rs.getLong(1), rs.getString(2),
 					rs.getString(3), rs.getString(4), rs.getString(5),
 					rs.getLong(6), rs.getLong(7), rs.getFloat(8));
+		}
+
+		ResultSet rs1 = stmt.executeQuery("select * from DistStation");
+		ResultSetMetaData rsmd1 = rs1.getMetaData();
+		System.out.println("");
+		System.out.println("DistStation");
+		System.out
+				.println("--------------------------------------------------------------------------------------------------------------");
+		String format2 = "%-7s%-7s%-20s%-20s%-12s%-7s%-10s%-12s%-12s%n";
+		System.out.printf(format2, rsmd1.getColumnName(1),
+				rsmd1.getColumnName(2), rsmd1.getColumnName(3),
+				rsmd1.getColumnName(4), rsmd1.getColumnName(5),
+				rsmd1.getColumnName(6), rsmd1.getColumnName(7),
+				rsmd1.getColumnName(8), rsmd1.getColumnName(9));
+		System.out
+				.println("--------------------------------------------------------------------------------------------------------------");
+		while (rs1.next()) {
+			System.out.printf(format2, rs1.getLong(1), rs1.getLong(2),
+					rs1.getString(3), rs1.getString(4), rs1.getString(5),
+					rs1.getString(6), rs1.getLong(7), rs1.getLong(8),
+					rs1.getFloat(9));
+		}
+
+		ResultSet rs2 = stmt.executeQuery("select * from Customers");
+		ResultSetMetaData rsmd2 = rs.getMetaData();
+		System.out.println("");
+		System.out.println("Customers");
+		System.out
+				.println("--------------------------------------------------------------------------------------------------");
+		String format3 = "%-7s%-7s%-10s%-14s%-14s%-14s%-12s%-12s%-7s%-12s%-16s%-16s%-12s%-12s%-17s%-17s%-17s%n";
+		System.out.printf(format3, rsmd2.getColumnName(1),
+				rsmd2.getColumnName(2), rsmd2.getColumnName(3),
+				rsmd2.getColumnName(4), rsmd2.getColumnName(5),
+				rsmd2.getColumnName(6), rsmd2.getColumnName(7),
+				rsmd2.getColumnName(8), rsmd2.getColumnName(9),
+				rsmd2.getColumnName(10), rsmd2.getColumnName(11),
+				rsmd2.getColumnName(12), rsmd2.getColumnName(13),
+				rsmd2.getColumnName(14), rsmd2.getColumnName(15),
+				rsmd2.getColumnName(16), rsmd2.getColumnName(17));
+		System.out
+				.println("--------------------------------------------------------------------------------------------------");
+		while (rs2.next()) {
+			System.out.printf(format3, rs2.getLong(1), rs2.getLong(2),
+					rs2.getLong(3), rs2.getString(4), rs2.getString(5),
+					rs2.getString(6), rs2.getString(7), rs2.getString(8),
+					rs2.getString(9), rs2.getLong(10), rs2.getString(11),
+					rs2.getString(12), rs2.getLong(13), rs2.getFloat(14),
+					rs2.getFloat(15), rs2.getLong(16), rs2.getLong(17));
 		}
 	}
 
@@ -702,24 +750,31 @@ public class GroceryDeliveryDB {
 
 	public static void makePayment() throws SQLException {
 		Scanner read = new Scanner(System.in);
+		System.out.print("Please enter the id of your distribution center: ");
+		int ds_id = read.nextInt();
 		System.out.print("Please enter your unique customer id: ");
 		int custID = read.nextInt();
 		System.out.print("Please enter your payment amount: ");
 		double payAmt = read.nextDouble();
-
-		String selectQuery = ("SELECT * FROM CUSTOMERS WHERE CUST_ID = ?");
+		Statement st = connection.createStatement();
+		st.executeUpdate("SET TRANSACTION READ WRITE");
+		String selectQuery = ("SELECT * FROM CUSTOMERS WHERE CUST_ID = ? AND DS_ID = ?");
 		PreparedStatement ps = connection.prepareStatement(selectQuery);
 		ps.setLong(1, custID);
+		ps.setLong(2, ds_id);
 		ResultSet rs = ps.executeQuery();
 		ps.close();
+
 		ps = null;
-		String debt = rs.getString(15);
+		int numPay, wh_id;
+		String debt;
+		debt = rs.getString(14);
 		double debtAmt = Double.parseDouble(debt);
-		int numPay = rs.getInt(17);
-		int wh_id = rs.getInt(1);
-		int ds_id = rs.getInt(2);
+		numPay = rs.getInt(16);
+		wh_id = rs.getInt(1);
 
 		// get YTD_SALES_SUM for ds so that is may also be updated
+
 		String ytdSales = ("SELECT YTD_SALES_SUM FROM DISTSTATION WHERE WH_ID=? AND DS_ID=?");
 		PreparedStatement ytdPrep = connection.prepareStatement(ytdSales);
 		ytdPrep.setLong(1, wh_id);
@@ -739,15 +794,55 @@ public class GroceryDeliveryDB {
 			System.out.println("A payment of $" + debtAmt
 					+ " has been applied to your account and $" + extra
 					+ " has been refunded to you. Your current debt is $0.");
-			ytdSalesSum = ytdSalesSum + (float)debtAmt;
+			ytdSalesSum = ytdSalesSum + (float) debtAmt;
+			String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
+			PreparedStatement ytdp = connection.prepareStatement(updateYTD);
+			ytdp.setFloat(1, ytdSalesSum);
+			ytdp.setLong(2, wh_id);
+			ytdp.executeUpdate();
+			ytdp.close();
+			ytdp = null;
+		} else {
+			float newDebt = (float) debtAmt - (float) payAmt;
+			String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=?");
+			PreparedStatement prep = connection.prepareStatement(updateQuery);
+			prep.setFloat(1, newDebt);
+			prep.setInt(2, custID);
+			prep.executeUpdate();
+			prep.close();
+			prep = null;
+			System.out
+					.println("A payment of $"
+							+ payAmt
+							+ " has been applied to your account and your current debt is $"
+							+ newDebt + ".");
+			ytdSalesSum = ytdSalesSum + (float) payAmt;
 			String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
 			PreparedStatement ytdp = connection.prepareStatement(updateYTD);
 			ytdp.setFloat(1, ytdSalesSum);
 			ytdp.setLong(2, wh_id);
 			ytdp.setLong(3, ds_id);
-		} else {
-			double newDebt = debtAmt - payAmt;
-
+			ytdp.executeUpdate();
+			ytdp.close();
+			ytdp = null;
+			st.executeUpdate("COMMIT");
+			st.close();
+			st = null;
 		}
+	}
+
+	public static void checkStockLevels() {
+		// TODO Auto-generated method stub
+
+	}
+
+	public static void deliverItems() {
+		// TODO Auto-generated method stub
+
+	}
+
+	public static void checkOrderStatus() {
+		// TODO Auto-generated method stub
+
 	}
 }
