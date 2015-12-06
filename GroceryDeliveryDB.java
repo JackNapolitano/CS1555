@@ -706,7 +706,13 @@ public class GroceryDeliveryDB {
 		// read in all required information
 		Scanner read = new Scanner(System.in);
 		System.out.print("Please enter the unique customer id: ");
-		int custID = read.nextInt();
+		int custID = 0;
+		try {
+			custID = Integer.parseInt(read.nextLine());
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}
+
 		System.out
 				.print("Enter the ids of the items in the order separated by commas: ");
 		String itemIDs = read.nextLine();
@@ -763,72 +769,88 @@ public class GroceryDeliveryDB {
 		ps.setLong(1, custID);
 		ps.setLong(2, ds_id);
 		ResultSet rs = ps.executeQuery();
-		ps.close();
-
-		ps = null;
-		int numPay, wh_id;
-		String debt;
-		debt = rs.getString(14);
-		double debtAmt = Double.parseDouble(debt);
-		numPay = rs.getInt(16);
-		wh_id = rs.getInt(1);
-
-		// get YTD_SALES_SUM for ds so that is may also be updated
-
-		String ytdSales = ("SELECT YTD_SALES_SUM FROM DISTSTATION WHERE WH_ID=? AND DS_ID=?");
-		PreparedStatement ytdPrep = connection.prepareStatement(ytdSales);
-		ytdPrep.setLong(1, wh_id);
-		ytdPrep.setLong(2, ds_id);
-		ResultSet ytdRS = ytdPrep.executeQuery();
-		float ytdSalesSum = ytdRS.getFloat(1);
-
-		if (payAmt >= debtAmt) {
-			double extra = payAmt - debtAmt;
-			String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=?");
-			PreparedStatement prep = connection.prepareStatement(updateQuery);
-			prep.setLong(1, 0);
-			prep.setInt(2, custID);
-			prep.executeUpdate();
-			prep.close();
-			prep = null;
-			System.out.println("A payment of $" + debtAmt
-					+ " has been applied to your account and $" + extra
-					+ " has been refunded to you. Your current debt is $0.");
-			ytdSalesSum = ytdSalesSum + (float) debtAmt;
-			String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
-			PreparedStatement ytdp = connection.prepareStatement(updateYTD);
-			ytdp.setFloat(1, ytdSalesSum);
-			ytdp.setLong(2, wh_id);
-			ytdp.executeUpdate();
-			ytdp.close();
-			ytdp = null;
-		} else {
-			float newDebt = (float) debtAmt - (float) payAmt;
-			String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=?");
-			PreparedStatement prep = connection.prepareStatement(updateQuery);
-			prep.setFloat(1, newDebt);
-			prep.setInt(2, custID);
-			prep.executeUpdate();
-			prep.close();
-			prep = null;
-			System.out
-					.println("A payment of $"
-							+ payAmt
-							+ " has been applied to your account and your current debt is $"
-							+ newDebt + ".");
-			ytdSalesSum = ytdSalesSum + (float) payAmt;
-			String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
-			PreparedStatement ytdp = connection.prepareStatement(updateYTD);
-			ytdp.setFloat(1, ytdSalesSum);
-			ytdp.setLong(2, wh_id);
-			ytdp.setLong(3, ds_id);
-			ytdp.executeUpdate();
-			ytdp.close();
-			ytdp = null;
-			st.executeUpdate("COMMIT");
-			st.close();
-			st = null;
+		if (rs == null) {
+			System.out.println("No matching entries found.");
+			return;
 		}
+		int numPay, wh_id;
+		double debtAmt;
+		String debt;
+		while (rs.next()) {
+			debt = rs.getString(14);
+			debtAmt = Double.parseDouble(debt);
+			numPay = rs.getInt(16);
+			wh_id = rs.getInt(1);
+
+			// get YTD_SALES_SUM for ds so that is may also be updated
+			String ytdSales = ("SELECT YTD_SALES_SUM FROM DISTSTATION WHERE WH_ID=? AND DS_ID=?");
+			PreparedStatement ytdPrep = connection.prepareStatement(ytdSales);
+			ytdPrep.setLong(1, wh_id);
+			ytdPrep.setLong(2, ds_id);
+			ResultSet ytdRS = ytdPrep.executeQuery();
+			while (ytdRS.next()) {
+				float ytdSalesSum = ytdRS.getFloat(1);
+
+				if (payAmt >= debtAmt) {
+					double extra = payAmt - debtAmt;
+					String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=?");
+					PreparedStatement prep = connection
+							.prepareStatement(updateQuery);
+					prep.setLong(1, 0);
+					prep.setInt(2, custID);
+					prep.executeUpdate();
+					prep.close();
+					prep = null;
+					System.out
+							.println("A payment of $"
+									+ debtAmt
+									+ " has been applied to your account and $"
+									+ extra
+									+ " has been refunded to you. Your current debt is $0.");
+					ytdSalesSum = ytdSalesSum + (float) debtAmt;
+					String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
+					PreparedStatement ytdp = connection
+							.prepareStatement(updateYTD);
+					ytdp.setFloat(1, ytdSalesSum);
+					ytdp.setLong(2, wh_id);
+					ytdp.setLong(3, ds_id);
+					ytdp.executeUpdate();
+
+				} else {
+					float newDebt = (float) debtAmt - (float) payAmt;
+					String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=?");
+					PreparedStatement prep = connection
+							.prepareStatement(updateQuery);
+					prep.setFloat(1, newDebt);
+					prep.setInt(2, custID);
+					prep.executeUpdate();
+					prep.close();
+					prep = null;
+					System.out
+							.println("A payment of $"
+									+ payAmt
+									+ " has been applied to your account and your current debt is $"
+									+ newDebt + ".");
+					ytdSalesSum = ytdSalesSum + (float) payAmt;
+					String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
+					PreparedStatement ytdp = connection
+							.prepareStatement(updateYTD);
+					ytdp.setFloat(1, ytdSalesSum);
+					ytdp.setLong(2, wh_id);
+					ytdp.setLong(3, ds_id);
+					ytdp.executeUpdate();
+					ytdp.close();
+					ytdp = null;
+					st.executeUpdate("COMMIT");
+					st.close();
+					st = null;
+				}
+			}
+			ytdRS.close();
+			ytdRS = null;
+		}
+		ps.close();
+		ps = null;
 	}
 
 	public static void checkStockLevels() {
