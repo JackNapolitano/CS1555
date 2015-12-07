@@ -52,7 +52,7 @@ public class GroceryDeliveryDB {
 			System.out
 					.println("------------------------------------------------------\nWelcome to the Grocery Delivery System. Select how you \nwould like to interact with the system:\n------------------------------------------------------");
 			System.out
-					.print("1 - \tCreate Database (no drop table statements)\n2 - \tReset DB, Generate Data\n3 - \tView databases\n4 - \tNew Order\n5 - \tMake a payment\n6- \tCheck order status\n7- \tDelivery transaction\n8- \tStock transaction\n9- \tExit Application\nEnter a number: ");
+					.print("1 - \tCreate Database (no drop table statements)\n2 - \tReset DB, Generate Data\n3 - \tView databases\n4 - \tNew Order\n5 - \tMake a payment\n6- \tCheck order status\n7- \tDelivery transaction\n8- \tStock transaction\n9- \tExit Application\n10 -\tDrop All Tables\nEnter a number: ");
 			int n = reader.nextInt();
 			switch (n) {
 			case 1:
@@ -84,10 +84,71 @@ public class GroceryDeliveryDB {
 				System.out.println("Connection closed.");
 				System.exit(0);
 				break;
+			case 10:
+				dropTables();
+				break;
 			}
 		}
 	}
 
+	public static void dropTables() throws SQLException {
+		String selectQuery = ("DROP TABLE Stock");
+		PreparedStatement ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+		selectQuery = ("DROP TABLE LineItems");
+		ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+		selectQuery = ("DROP TABLE Items");
+		ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+		selectQuery = ("DROP TABLE Orders");
+		ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+		selectQuery = ("DROP TABLE Customers");
+		ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+		selectQuery = ("DROP TABLE DistStation");
+		ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+		selectQuery = ("DROP TABLE Warehouse");
+		ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+	}
 	public static void GenData() {
 		// create tables from .sql file
 		try {
@@ -113,8 +174,6 @@ public class GroceryDeliveryDB {
 			GenCustomerData(10);// 3000 customers per DS
 			System.out.println("Generating orders and line items...");
 			GenOrderData(100);// between 1-100 orders per cust3
-			// System.out.println("Generating line items...");
-			// GenLineItemData(5, 3);// 5 orders per cust, 3 line items per cust
 			System.out.println("Generating stock entries...");
 			GenStockData(100);// 10000 stock listings per warehouse
 
@@ -372,64 +431,6 @@ public class GroceryDeliveryDB {
 		}
 	}
 
-	// public static void GenLineItemData(int numOrders, int numLIs)
-	// throws SQLException {
-	// Random rand = new Random();
-	// int wh_ID;
-	// int ds_ID;
-	// int cust_ID;
-	// int order_ID;
-	// int li_ID;
-	// int item_ID;
-	// int quantity;
-	// int total_Cost;
-	// for (int w = 0; w < warehouses; w++) {
-	// for (int x = 0; x < distPerWarehouse; x++) {
-	// for (int y = 0; y < custPerDist; y++) {
-	// for (int z = 0; z < numOrders; z++) {
-	// int numLItems = rand.nextInt((15 - 5) + 1) + 5; // generates
-	// // random
-	// // number
-	// // of
-	// // line
-	// // items
-	// // from
-	// // 5-15
-	// for (int a = 0; a < numLItems; a++) {
-	// // generate the data
-	// wh_ID = w;
-	// ds_ID = x;
-	// cust_ID = y;
-	// order_ID = z;
-	// li_ID = a;
-	// item_ID = rand.nextInt(30);
-	// quantity = rand.nextInt(3000);
-	// total_Cost = rand.nextInt(2000);
-	// String date_Delivered = generateDate();
-	// // do a sql insert here using the JDBC
-	// Statement st = connection.createStatement();
-	// String insQuery = ("INSERT INTO LineItems VALUES (?,?,?,?,?,?,?,?,?)");
-	// PreparedStatement ps = connection
-	// .prepareStatement(insQuery);
-	// ps.setLong(1, wh_ID);
-	// ps.setLong(2, ds_ID);
-	// ps.setLong(3, cust_ID);
-	// ps.setLong(4, order_ID);
-	// ps.setLong(5, li_ID);
-	// ps.setLong(6, item_ID);
-	// ps.setLong(7, quantity);
-	// ps.setLong(8, total_Cost);
-	// ps.setString(9, date_Delivered);
-	// ps.executeUpdate();
-	// ps.close();
-	// ps = null;
-	// }
-	// }
-	// }
-	// }
-	// }
-	// }
-
 	public static void GenItemData(int numItems) throws SQLException {
 		Random rand = new Random();
 		int item_ID;
@@ -517,38 +518,163 @@ public class GroceryDeliveryDB {
 	public static String generateDate() {
 		StringBuilder temp = new StringBuilder();
 		Random rng = new Random();
-		int firstDigitDate = rng.nextInt(3);
-		temp.append(firstDigitDate);
-		if (firstDigitDate < 3)
-			temp.append(rng.nextInt(10));
-		else
-			temp.append(rng.nextInt(1));
-		temp.append("-");
 		int month = rng.nextInt(12);
 		if (month == 0)
+		{
+			int firstDigitDate = rng.nextInt(4);
+			temp.append(firstDigitDate);
+			if (firstDigitDate == 3)
+				temp.append(rng.nextInt(2));
+			else if (firstDigitDate == 2 || firstDigitDate == 1)
+				temp.append(rng.nextInt(10));
+			else
+				temp.append(rng.nextInt(9)+1);
+			temp.append("-");
 			temp.append("JAN-");
+		}
 		else if (month == 1)
+		{
+			int firstDigitDate = rng.nextInt(3);
+			temp.append(firstDigitDate);
+			if (firstDigitDate == 2)
+				temp.append(rng.nextInt(9));
+			else if(firstDigitDate == 1)
+				temp.append(rng.nextInt(10));
+			else
+				temp.append(rng.nextInt(9)+1);
+			temp.append("-");
 			temp.append("FEB-");
+		}
 		else if (month == 2)
+		{
+			int firstDigitDate = rng.nextInt(4);
+			temp.append(firstDigitDate);
+			if (firstDigitDate == 3)
+				temp.append(rng.nextInt(2));
+			else if (firstDigitDate == 2 || firstDigitDate == 1)
+				temp.append(rng.nextInt(10));
+			else
+				temp.append(rng.nextInt(9)+1);
+			temp.append("-");
 			temp.append("MAR-");
+		}
 		else if (month == 3)
+		{
+			int firstDigitDate = rng.nextInt(4);
+			temp.append(firstDigitDate);
+			if (firstDigitDate == 3)
+				temp.append(0);
+			else if (firstDigitDate == 2 || firstDigitDate == 1)
+				temp.append(rng.nextInt(10));
+			else
+				temp.append(rng.nextInt(9)+1);
+			temp.append("-");
 			temp.append("APR-");
+		}
 		else if (month == 4)
+		{
+			int firstDigitDate = rng.nextInt(4);
+			temp.append(firstDigitDate);
+			if (firstDigitDate == 3)
+				temp.append(rng.nextInt(2));
+			else if (firstDigitDate == 2 || firstDigitDate == 1)
+				temp.append(rng.nextInt(10));
+			else
+				temp.append(rng.nextInt(9)+1);
+			temp.append("-");
 			temp.append("MAY-");
+		}
 		else if (month == 5)
+		{
+			int firstDigitDate = rng.nextInt(4);
+			temp.append(firstDigitDate);
+			if (firstDigitDate == 3)
+				temp.append(0);
+			else if (firstDigitDate == 2 || firstDigitDate == 1)
+				temp.append(rng.nextInt(10));
+			else
+				temp.append(rng.nextInt(9)+1);
+			temp.append("-");
 			temp.append("JUN-");
+		}
 		else if (month == 6)
+		{
+			int firstDigitDate = rng.nextInt(4);
+			temp.append(firstDigitDate);
+			if (firstDigitDate == 3)
+				temp.append(rng.nextInt(2));
+			else if (firstDigitDate == 2 || firstDigitDate == 1)
+				temp.append(rng.nextInt(10));
+			else
+				temp.append(rng.nextInt(9)+1);
+			temp.append("-");
 			temp.append("JUL-");
+		}
 		else if (month == 7)
+		{
+			int firstDigitDate = rng.nextInt(4);
+			temp.append(firstDigitDate);
+			if (firstDigitDate == 3)
+				temp.append(rng.nextInt(2));
+			else if (firstDigitDate == 2 || firstDigitDate == 1)
+				temp.append(rng.nextInt(10));
+			else
+				temp.append(rng.nextInt(9)+1);
+			temp.append("-");
 			temp.append("AUG-");
+		}
 		else if (month == 8)
+		{
+			int firstDigitDate = rng.nextInt(4);
+			temp.append(firstDigitDate);
+			if (firstDigitDate == 3)
+				temp.append(0);
+			else if (firstDigitDate == 2 || firstDigitDate == 1)
+				temp.append(rng.nextInt(10));
+			else
+				temp.append(rng.nextInt(9)+1);
+			temp.append("-");
 			temp.append("SEP-");
+		}
 		else if (month == 9)
+		{
+			int firstDigitDate = rng.nextInt(4);
+			temp.append(firstDigitDate);
+			if (firstDigitDate == 3)
+				temp.append(rng.nextInt(2));
+			else if (firstDigitDate == 2 || firstDigitDate == 1)
+				temp.append(rng.nextInt(10));
+			else
+				temp.append(rng.nextInt(9)+1);
+			temp.append("-");
 			temp.append("OCT-");
+		}
 		else if (month == 10)
+		{
+			int firstDigitDate = rng.nextInt(4);
+			temp.append(firstDigitDate);
+			if (firstDigitDate == 3)
+				temp.append(0);
+			else if (firstDigitDate == 2 || firstDigitDate == 1)
+				temp.append(rng.nextInt(10));
+			else
+				temp.append(rng.nextInt(9)+1);
+			temp.append("-");
 			temp.append("NOV-");
+		}
 		else if (month == 11)
+		{
+			int firstDigitDate = rng.nextInt(4);
+			temp.append(firstDigitDate);
+			if (firstDigitDate == 3)
+				temp.append(rng.nextInt(2));
+			else if (firstDigitDate == 2 || firstDigitDate == 1)
+				temp.append(rng.nextInt(10));
+			else
+				temp.append(rng.nextInt(9)+1);
+			temp.append("-");
 			temp.append("DEC-");
+		}
 
 		int year = rng.nextInt(2);
 		if (year == 0)
@@ -865,8 +991,36 @@ public class GroceryDeliveryDB {
 
 	}
 
-	public static void checkOrderStatus() {
-		// TODO Auto-generated method stub
-
+	public static void checkOrderStatus() throws SQLException {
+		Scanner read = new Scanner(System.in);
+		System.out.print("Please enter the id of your distribution center: ");
+		int ds_id = read.nextInt();
+		System.out.print("Please enter your unique customer id: ");
+		int custID = read.nextInt();
+		Statement st = connection.createStatement();
+		st.executeUpdate("SET TRANSACTION READ WRITE");
+		String selectQuery = ("SELECT ITEM_ID, QUANTITY, TOTAL_COST, DATE_DELIVERED FROM LineItems WHERE CUST_ID = ? AND DS_ID = ? AND ORDER_ID = (SELECT ORDER_ID AS O_ID FROM (SELECT * FROM ORDERS WHERE CUST_ID = ? AND DS_ID = ? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <= 1) ORDER BY ITEM_ID ASC");
+		PreparedStatement ps = connection.prepareStatement(selectQuery);		
+		ps.setLong(1, custID);
+		ps.setLong(2, ds_id);
+		ps.setLong(3, custID);
+		ps.setLong(4, ds_id);
+		ResultSet resultSet = ps.executeQuery();
+		ResultSetMetaData rsmd = resultSet.getMetaData();
+		int columnsNumber = rsmd.getColumnCount();
+		System.out.print("Customer "+custID+" from Distribution Station "+ds_id+"'s last order contained:\n");
+		while (resultSet.next()) {
+		    for (int i = 1; i <= columnsNumber; i++) {
+		        if (i > 1) System.out.print(",       ");
+		        String columnValue = resultSet.getString(i);
+		        System.out.print(rsmd.getColumnName(i) + " " + columnValue);
+		    }
+		    System.out.println("");
+		}
+		st.executeUpdate("COMMIT");
+		st.close();
+		st = null;
+		ps.close();
+		ps = null;
 	}
 }
