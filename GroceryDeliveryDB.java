@@ -973,9 +973,11 @@ public class GroceryDeliveryDB {
 					double totalPrice = price * iQuantities.get(i);
 					insLI.setDouble(8, totalPrice);
 					insLI.setDate(9, null);
-
+					insLI.close();
+					insLI = null;
 				}
-
+				insNewOrder.close();
+				insNewOrder = null;
 			}
 			maxOrd.close();
 			maxOrd = null;
@@ -983,6 +985,8 @@ public class GroceryDeliveryDB {
 		whRS.close();
 		whRS = null;
 		st.executeQuery("COMMIT");
+		st.close();
+		st = null;
 		// update debt in customers table
 
 	}
@@ -1088,14 +1092,38 @@ public class GroceryDeliveryDB {
 		ps = null;
 	}
 
-	public static void checkStockLevels() {
+	public static void checkStockLevels() throws SQLException {
 		// TODO Auto-generated method stub
 
 	}
 
-	public static void deliverItems() {
-		// TODO Auto-generated method stub
-
+	public static void deliverItems() throws SQLException {
+		Scanner read = new Scanner(System.in);
+		System.out.print("Please enter the id of your warehouse: ");
+		int wh_id = read.nextInt();
+		String completed = "Incomplete";
+		Statement st = connection.createStatement();
+		st.executeUpdate("SET TRANSACTION READ WRITE");
+		String selectQuery = ("SELECT DS_ID, CUST_ID, ORDER_ID, COMPLETED_FLAG FROM ORDERS WHERE WH_ID = ? AND COMPLETED_FLAG = ? ");
+		PreparedStatement ps = connection.prepareStatement(selectQuery);		
+		ps.setLong(1, wh_id);
+		ps.setString(2, completed);
+		ResultSet resultSet = ps.executeQuery();
+		ResultSetMetaData rsmd = resultSet.getMetaData();
+		int columnsNumber = rsmd.getColumnCount();
+		while (resultSet.next()) {
+		    for (int i = 1; i <= columnsNumber; i++) {
+		        if (i > 1) System.out.print(",       ");
+		        String columnValue = resultSet.getString(i);
+		        System.out.print(rsmd.getColumnName(i) + " " + columnValue);
+		    }
+		    System.out.println("");
+		}
+		st.executeUpdate("COMMIT");
+		st.close();
+		st = null;
+		ps.close();
+		ps = null;
 	}
 
 	public static void checkOrderStatus() throws SQLException {
