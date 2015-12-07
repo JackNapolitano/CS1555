@@ -952,6 +952,7 @@ public class GroceryDeliveryDB {
 					insLI.setLong(5, i);
 					insLI.setLong(6, iIds.get(i));
 					insLI.setLong(7, iQuantities.get(i));
+
 					// calculate total cost
 					String priceQuery = "SELECT PRICE FROM ITEMS WHERE ITEM_ID =?";
 					PreparedStatement pricePS = connection
@@ -973,6 +974,7 @@ public class GroceryDeliveryDB {
 					double totalPrice = price * iQuantities.get(i);
 					insLI.setDouble(8, totalPrice);
 					insLI.setDate(9, null);
+					insLI.executeUpdate();
 					insLI.close();
 					insLI = null;
 				}
@@ -987,8 +989,6 @@ public class GroceryDeliveryDB {
 		st.executeQuery("COMMIT");
 		st.close();
 		st = null;
-		// update debt in customers table
-
 	}
 
 	public static void makePayment() throws SQLException {
@@ -1101,23 +1101,79 @@ public class GroceryDeliveryDB {
 		Scanner read = new Scanner(System.in);
 		System.out.print("Please enter the id of your warehouse: ");
 		int wh_id = read.nextInt();
-		String completed = "Incomplete";
+		String incomplete = "Incomplete";
+		String completed = "Completed";
 		Statement st = connection.createStatement();
 		st.executeUpdate("SET TRANSACTION READ WRITE");
 		String selectQuery = ("SELECT DS_ID, CUST_ID, ORDER_ID, COMPLETED_FLAG FROM ORDERS WHERE WH_ID = ? AND COMPLETED_FLAG = ? ");
 		PreparedStatement ps = connection.prepareStatement(selectQuery);		
 		ps.setLong(1, wh_id);
-		ps.setString(2, completed);
+		ps.setString(2, incomplete);
 		ResultSet resultSet = ps.executeQuery();
 		ResultSetMetaData rsmd = resultSet.getMetaData();
 		int columnsNumber = rsmd.getColumnCount();
 		while (resultSet.next()) {
-		    for (int i = 1; i <= columnsNumber; i++) {
-		        if (i > 1) System.out.print(",       ");
-		        String columnValue = resultSet.getString(i);
-		        System.out.print(rsmd.getColumnName(i) + " " + columnValue);
-		    }
-		    System.out.println("");
+			// update order
+			int custID = resultSet.getInt(2);
+			int ds_ID = resultSet.getInt(1);
+			int order_ID = resultSet.getInt(3);
+
+			String selectQuery2 = ("SELECT TOTAL_COST FROM LINEITEMS WHERE WH_ID = ? AND DS_ID = ? AND CUST_ID = ? AND ORDER_ID = ? ");
+			PreparedStatement ps2 = connection.prepareStatement(selectQuery2);		
+			ps2.setLong(1, wh_id);
+			ps2.setLong(2, ds_ID);
+			ps2.setLong(3, custID);
+			ps2.setLong(4, order_ID);
+			ResultSet resultSet2 = ps2.executeQuery();
+			resultSet2.next();
+			double totalCostLI = resultSet2.getDouble(1);
+			//updates lineitems with the date delivered
+			String updateLineItemsQuery = ("UPDATE LINEITEMS SET DATE_DELIVERED = ? WHERE CUST_ID=? AND DS_ID=? AND ORDER_ID = ?");
+			PreparedStatement updateLineItems = connection.prepareStatement(updateLineItemsQuery);
+			java.sql.Date dateDeliv = new java.sql.Date((new java.util.Date()).getTime());
+			updateLineItems.setDate(1, dateDeliv);
+			updateLineItems.setLong(2, custID);
+			updateLineItems.setLong(3, ds_ID);
+			updateLineItems.setLong(4, order_ID);
+			updateLineItems.executeUpdate();
+			updateLineItems.close();
+			updateLineItems = null;
+
+			//updates Customer Debt
+			String selectQuery3 = ("SELECT DEBT FROM CUSTOMERS WHERE WH_ID = ? AND DS_ID = ? AND CUST_ID = ?");
+			PreparedStatement ps3 = connection.prepareStatement(selectQuery3);	
+			ps3.setLong(1, wh_id);
+			ps3.setLong(2, ds_ID);
+			ps3.setLong(3, custID);
+			ResultSet resultSet3 = ps3.executeQuery();
+			resultSet3.next();
+			double currentDebt = resultSet3.getDouble(1);;
+			double totalCost = currentDebt + totalCostLI;
+			String updateCustomerQuery = ("UPDATE CUSTOMERS SET DEBT=? WHERE CUST_ID=? AND DS_ID=?");
+			PreparedStatement updateCustomers = connection.prepareStatement(updateCustomerQuery);
+			updateCustomers.setDouble(1, totalCost);
+			updateCustomers.setLong(2, custID);
+			updateCustomers.setLong(3, ds_ID);
+			updateCustomers.executeUpdate();
+			updateCustomers.close();
+			updateCustomers = null;
+
+			//Changes orders from incomplete to completed
+			String updateOrdersQuery = ("UPDATE ORDERS SET COMPLETED_FLAG=? WHERE CUST_ID=? AND DS_ID=? AND ORDER_ID = ?");
+			PreparedStatement updateOrders = connection.prepareStatement(updateOrdersQuery);
+			updateOrders.setString(1, completed);
+			updateOrders.setLong(2, custID);
+			updateOrders.setLong(3, ds_ID);
+			updateOrders.setLong(4, order_ID);
+			updateOrders.executeUpdate();
+			updateOrders.close();
+			updateOrders = null;
+
+
+			ps2.close();
+			ps2 = null;
+			ps3.close();
+			ps3 = null;
 		}
 		st.executeUpdate("COMMIT");
 		st.close();
@@ -1125,7 +1181,6 @@ public class GroceryDeliveryDB {
 		ps.close();
 		ps = null;
 	}
-
 	public static void checkOrderStatus() throws SQLException {
 		Scanner read = new Scanner(System.in);
 		System.out.print("Please enter the id of your distribution center: ");
