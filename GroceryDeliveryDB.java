@@ -752,6 +752,24 @@ public class GroceryDeliveryDB {
 					rs2.getString(12), rs2.getLong(13), rs2.getFloat(14),
 					rs2.getFloat(15), rs2.getLong(16), rs2.getLong(17));
 		}
+		ResultSet rs3 = stmt.executeQuery("select * from Orders");
+			ResultSetMetaData rsmd3 = rs.getMetaData();
+			System.out.println("");
+			System.out.println("Orders");
+			System.out
+					.println("--------------------------------------------------------------------------------------------------");
+			String format4 = "%-7s%-7s%-10s%-14s%-14s%-14s%-12s%n";
+			System.out.printf(format4, rsmd3.getColumnName(1),
+					rsmd3.getColumnName(2), rsmd3.getColumnName(3),
+					rsmd3.getColumnName(4), rsmd3.getColumnName(5),
+					rsmd3.getColumnName(6), rsmd3.getColumnName(7));
+			System.out
+					.println("--------------------------------------------------------------------------------------------------");
+			while (rs3.next()) {
+				System.out.printf(format4, rs3.getLong(1), rs3.getLong(2),
+						rs3.getLong(3), rs3.getLong(4), rs3.getString(5),
+						rs3.getString(6), rs3.getLong(7));
+			}
 	}
 
 	public static void resetDatabase() throws SQLException {
@@ -831,6 +849,14 @@ public class GroceryDeliveryDB {
 	public static void newOrder() throws SQLException {
 		// read in all required information
 		Scanner read = new Scanner(System.in);
+		System.out.print("Please enter your distribution station id: ");
+		int ds_ID = 0;
+		try {
+			ds_ID = Integer.parseInt(read.nextLine());
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}
+
 		System.out.print("Please enter the unique customer id: ");
 		int custID = 0;
 		try {
@@ -877,6 +903,87 @@ public class GroceryDeliveryDB {
 					.println("The total number of items and the sum of all quantities must match. Please try the order again.");
 			return;
 		}
+
+		Statement st = connection.createStatement();
+		st.executeQuery("SET TRANSACTION READ WRITE");
+		// get WH_ID from Customers table
+		String whQuery = "SELECT * FROM CUSTOMERS WHERE CUST_ID = ? AND DS_ID = ?";
+		PreparedStatement getWHID = connection.prepareStatement(whQuery);
+		getWHID.setLong(1, custID);
+		getWHID.setLong(2, ds_ID);
+		ResultSet whRS = getWHID.executeQuery();
+		while (whRS.next()) {
+			int wh_ID = whRS.getInt(1);
+			// get last order ID for customer and increment it by 1
+			String ordIDQuery = "SELECT MAX(ORDER_ID) FROM ORDERS WHERE CUST_ID=? AND DS_ID=?";
+			PreparedStatement maxOrdID = connection
+					.prepareStatement(ordIDQuery);
+			maxOrdID.setLong(1, custID);
+			maxOrdID.setLong(2, ds_ID);
+			ResultSet maxOrd = maxOrdID.executeQuery();
+			while (maxOrd.next()) {
+				int maxOrderID = maxOrd.getInt(1);
+				int newOrderID = maxOrderID + 1;
+
+				// create new order
+				String insertOrder = "INSERT INTO Orders VALUES (?,?,?,?,?,?,?)";
+				PreparedStatement insNewOrder = connection
+						.prepareStatement(insertOrder);
+				insNewOrder.setLong(1, wh_ID);
+				insNewOrder.setLong(2, ds_ID);
+				insNewOrder.setLong(3, custID);
+				insNewOrder.setLong(4, newOrderID);
+				java.sql.Date datePurchased = new java.sql.Date(
+						(new java.util.Date()).getTime());
+				insNewOrder.setDate(5, datePurchased);
+				insNewOrder.setString(6, "Incomplete");
+				insNewOrder.setLong(7, totalItems);
+				insNewOrder.executeUpdate();
+
+				// create line item entries for order
+				for (int i = 0; i < iIds.size(); i++) {
+					String liInsert = "INSERT INTO LineItems VALUES (?,?,?,?,?,?,?,?,?)";
+					PreparedStatement insLI = connection
+							.prepareStatement(liInsert);
+					insLI.setLong(1, wh_ID);
+					insLI.setLong(2, ds_ID);
+					insLI.setLong(3, custID);
+					insLI.setLong(4, newOrderID);
+					insLI.setLong(5, i);
+					insLI.setLong(6, iIds.get(i));
+					insLI.setLong(7, iQuantities.get(i));
+					// calculate total cost
+					String priceQuery = "SELECT PRICE FROM ITEMS WHERE ITEM_ID =?";
+					PreparedStatement pricePS = connection
+							.prepareStatement(priceQuery);
+					pricePS.setLong(1, iIds.get(i));
+					ResultSet priceRS = pricePS.executeQuery();
+					double price = 0;
+					while (priceRS.next()) {
+						price = priceRS.getDouble(1);
+						break;
+					}
+
+					if (price == 0) {
+						System.out
+								.println("Could not retrieve item price. Please check the item ID.");
+						return;
+					}
+
+					double totalPrice = price * iQuantities.get(i);
+					insLI.setDouble(8, totalPrice);
+					insLI.setDate(9, null);
+
+				}
+
+			}
+			maxOrd.close();
+			maxOrd = null;
+		}
+		whRS.close();
+		whRS = null;
+		st.executeQuery("COMMIT");
+		// update debt in customers table
 
 	}
 
