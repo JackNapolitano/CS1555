@@ -1177,9 +1177,54 @@ public class GroceryDeliveryDB {
 		ps = null;
 	}
 
+	//question is very ambiguous and either way the metric is not very useful
+	//due to the ambiguity of the returned result
 	public static void checkStockLevels() throws SQLException {
-		// TODO Auto-generated method stub
-
+		Scanner read = new Scanner(System.in);
+		//this is for when there is more than 1 warehouse since ds_ids are not globally unique
+		System.out.print("Please enter your warehouse id: ");
+		int wh_id = read.nextInt();
+		System.out.print("Please enter distribution station id: ");
+		int ds_id = read.nextInt();
+		System.out.print("Please enter the stock threshold you wish to check: ");
+		int stockThreshold = read.nextInt();
+		
+		
+		Statement st = connection.createStatement();
+		st.executeQuery("SET TRANSACTION READ WRITE");
+		//return the number of unique items sold recently that are below stock threshold
+		String top20 = "SELECT COUNT(QUANTITY_AVAILABLE) FROM (SELECT QUANTITY_AVAILABLE FROM STOCK NATURAL JOIN (SELECT ITEM_ID FROM LINEITEMS NATURAL JOIN (SELECT ORDER_ID FROM (SELECT * FROM ORDERS WHERE DS_ID = ? AND WH_ID =? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <=20))) WHERE QUANTITY_AVAILABLE < ?";
+		PreparedStatement top20Orders = connection.prepareStatement(top20);
+		top20Orders.setLong(1, ds_id);
+		top20Orders.setLong(2, wh_id);
+		top20Orders.setLong(3, stockThreshold);
+		ResultSet rs = top20Orders.executeQuery();
+		while(rs.next()){
+			System.out.println("There are "+rs.getLong(1)+ " items in warehouse "+ wh_id+ " have a stock below "+ stockThreshold+".");
+		}
+		
+		top20Orders.close();
+		top20Orders = null;
+		
+		//return the sum of quantities purchased recently for items below stock threshold
+		String pQuantities = "SELECT QUANTITY FROM STOCK NATURAL JOIN (SELECT ITEM_ID, QUANTITY FROM LINEITEMS NATURAL JOIN (SELECT ORDER_ID FROM (SELECT * FROM ORDERS WHERE DS_ID = ? AND WH_ID =? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <=20)) WHERE QUANTITY_AVAILABLE < ?";
+		PreparedStatement qTop20 = connection.prepareStatement(pQuantities);
+		int sum = 0;
+		qTop20.setLong(1, ds_id);
+		qTop20.setLong(2, wh_id);
+		qTop20.setLong(3, stockThreshold);
+		ResultSet qRS = qTop20.executeQuery();
+		while (qRS.next()){
+			sum = sum + qRS.getInt(1);
+		}
+		
+		qRS.close();
+		qRS = null;
+		System.out.println(sum+ " items were purchase recently that are below the stock threshold, "+stockThreshold+ " in warehouse "+wh_id+".");
+		
+		st.executeQuery("COMMIT");
+		st.close();
+		st = null;
 	}
 
 	public static void deliverItems() throws SQLException {
