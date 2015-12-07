@@ -88,12 +88,11 @@ public class GroceryDeliveryDB {
 				dropTables();
 				break;
 			case 11:
-				printshit();
+				printstuff();
 				break;
 			}
 		}
 	}
-
 	public static void dropTables() throws SQLException {
 		String selectQuery = ("DROP TABLE Stock");
 		PreparedStatement ps = connection.prepareStatement(selectQuery);
@@ -167,26 +166,28 @@ public class GroceryDeliveryDB {
 			System.out
 					.println("Generating data for the database... (takes a few minutes)");
 			System.out.println("Generating items...");
-			GenItemData(100);// 10000 unique grocery items
+			GenItemData(10000);// 10000 unique grocery items
 			System.out.println("Generating warehouse...");
-			GenWarehouseData(1); // we chose 20 warehouses as it is a logical
-									// number of warehouses
+			GenWarehouseData(1); // number of warehouses
 			System.out.println("Generating distribution stations...");
-			GenDistStationData(3);// 8 DS per HW
+			GenDistStationData(8);// 8 DS per HW
 			System.out.println("Generating customers...");
-			GenCustomerData(10);// 3000 customers per DS
+			GenCustomerData(3000);// 3000 customers per DS
 			System.out.println("Generating orders and line items...");
 			GenOrderData(100);// between 1-100 orders per cust3
 			System.out.println("Generating stock entries...");
-			GenStockData(100);// 10000 stock listings per warehouse
+			GenStockData(10000);// 10000 stock listings per warehouse
 			System.out.println("Updating data to reflect sales... (sales sum, num deliveries, etc..)");
-			//updateData();// 10000 stock listings per warehouse
+			//DATA CONSISTENCY BELOW
+			updateCustData();
+			updateDSData();
+			updateWHData();
+			//updateStockData();
 
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
-
 	public static void GenWarehouseData(int numWH) throws SQLException {
 		warehouses = numWH;
 		Random rand = new Random();
@@ -220,6 +221,7 @@ public class GroceryDeliveryDB {
 															// 0.0-1.0 FIXED
 															// 11/17 see above
 			// do a sql insert here using the JDBC
+			ytdSalesSum = 0;
 			String insQuery = ("INSERT INTO Warehouse VALUES (?,?,?,?,?,?,?,?)");
 			PreparedStatement ps = connection.prepareStatement(insQuery);
 			ps.setLong(1, wh_ID);
@@ -239,7 +241,6 @@ public class GroceryDeliveryDB {
 			// taxrate+ "\nYTD_Sales_Sum: " +ytdSalesSum);
 		}
 	}
-
 	public static void GenDistStationData(int numDS) throws SQLException {
 		distPerWarehouse = numDS;
 		Random rand = new Random();
@@ -268,6 +269,7 @@ public class GroceryDeliveryDB {
 				int cents = rand.nextInt(90) + 10;
 				String ytdSalesString = dollars + "." + cents;
 				ytdSalesSum = Float.parseFloat(ytdSalesString);
+				ytdSalesSum = 0;
 				// do a sql insert here using the JDBC
 				String insQuery = ("INSERT INTO DistStation VALUES (?,?,?,?,?,?,?,?,?)");
 				PreparedStatement ps = connection.prepareStatement(insQuery);
@@ -286,7 +288,6 @@ public class GroceryDeliveryDB {
 			}
 		}
 	}
-
 	public static void GenCustomerData(int numCust) throws SQLException {
 		custPerDist = numCust;
 		Random rand = new Random();
@@ -356,7 +357,7 @@ public class GroceryDeliveryDB {
 			}
 		}
 	}
-	public static void updateData() throws SQLException {
+	public static void updateCustData() throws SQLException {
 		Scanner read = new Scanner(System.in);
 		Statement st = connection.createStatement();
 		st.executeUpdate("SET TRANSACTION READ WRITE");
@@ -371,71 +372,191 @@ public class GroceryDeliveryDB {
 			int ds_ID = resultSet.getInt(2);
 			int custID = resultSet.getInt(3);
 			int order_ID = resultSet.getInt(4);
-			System.out.println(wh_id+" "+ds_ID+" "+custID+" "+order_ID);
+			String completed = "Completed";
+			String incomplete = "Incomplete";
 
-			String selectQuery2 = ("SELECT COUNT(*) FROM ORDERS WHERE WH_ID = ? AND DS_ID = ? AND CUST_ID = ? AND COMPLETED_FLAG =  ");
+			String selectQuery2 = ("SELECT COUNT(*) FROM ORDERS WHERE WH_ID = ? AND DS_ID = ? AND CUST_ID = ? AND COMPLETED_FLAG = ? ");
 			PreparedStatement ps2 = connection.prepareStatement(selectQuery2);		
 			ps2.setLong(1, wh_id);
 			ps2.setLong(2, ds_ID);
 			ps2.setLong(3, custID);
-			ps2.setLong(4, order_ID);
+			ps2.setString(4, completed);
 			ResultSet resultSet2 = ps2.executeQuery();
 			resultSet2.next();
-			// double totalCostLI = resultSet2.getDouble(1);
-			// //updates lineitems with the date delivered
-			// String updateLineItemsQuery = ("UPDATE LINEITEMS SET DATE_DELIVERED = ? WHERE CUST_ID=? AND DS_ID=? AND ORDER_ID = ?");
-			// PreparedStatement updateLineItems = connection.prepareStatement(updateLineItemsQuery);
-			// java.sql.Date dateDeliv = new java.sql.Date((new java.util.Date()).getTime());
-			// updateLineItems.setDate(1, dateDeliv);
-			// updateLineItems.setLong(2, custID);
-			// updateLineItems.setLong(3, ds_ID);
-			// updateLineItems.setLong(4, order_ID);
-			// updateLineItems.executeUpdate();
-			// updateLineItems.close();
-			// updateLineItems = null;
+			int ordercount = resultSet2.getInt(1);
+			String selectQuery3 = ("SELECT SUM(TOTAL_COST) FROM LINEITEMS WHERE WH_ID = ? AND DS_ID = ? AND CUST_ID = ?");
+			PreparedStatement ps3 = connection.prepareStatement(selectQuery3);		
+			ps3.setLong(1, wh_id);
+			ps3.setLong(2, ds_ID);
+			ps3.setLong(3, custID);
+			ResultSet resultSet3 = ps3.executeQuery();
+			resultSet3.next();
+			double sumOfAllOrders = resultSet3.getDouble(1);
 
-			// //updates Customer Debt
-			// String selectQuery3 = ("SELECT DEBT FROM CUSTOMERS WHERE WH_ID = ? AND DS_ID = ? AND CUST_ID = ?");
-			// PreparedStatement ps3 = connection.prepareStatement(selectQuery3);	
-			// ps3.setLong(1, wh_id);
-			// ps3.setLong(2, ds_ID);
-			// ps3.setLong(3, custID);
-			// ResultSet resultSet3 = ps3.executeQuery();
-			// resultSet3.next();
-			// double currentDebt = resultSet3.getDouble(1);;
-			// double totalCost = currentDebt + totalCostLI;
-			// String updateCustomerQuery = ("UPDATE CUSTOMERS SET DEBT=? WHERE CUST_ID=? AND DS_ID=?");
-			// PreparedStatement updateCustomers = connection.prepareStatement(updateCustomerQuery);
-			// updateCustomers.setDouble(1, totalCost);
-			// updateCustomers.setLong(2, custID);
-			// updateCustomers.setLong(3, ds_ID);
-			// updateCustomers.executeUpdate();
-			// updateCustomers.close();
-			// updateCustomers = null;
+			String updateCustomerQuery = ("UPDATE CUSTOMERS SET NUM_PAYMENTS=?, NUM_DELIVERIES = ?, YTD_PURCHASE_TOTAL = ? WHERE CUST_ID=? AND DS_ID=?");
+			PreparedStatement updateCustomers = connection.prepareStatement(updateCustomerQuery);
+			updateCustomers.setInt(1, ordercount);
+			updateCustomers.setInt(2, ordercount);
+			updateCustomers.setDouble(3, sumOfAllOrders);
+			updateCustomers.setLong(4, custID);
+			updateCustomers.setLong(5, ds_ID);
+			updateCustomers.executeUpdate();
+			updateCustomers.close();
+			updateCustomers = null;
+			ps2.close();
+			ps2 = null;
+			ps3.close();
+			ps3 = null;
 
-			// //Changes orders from incomplete to completed
-			// String updateOrdersQuery = ("UPDATE ORDERS SET COMPLETED_FLAG=? WHERE CUST_ID=? AND DS_ID=? AND ORDER_ID = ?");
-			// PreparedStatement updateOrders = connection.prepareStatement(updateOrdersQuery);
-			// updateOrders.setString(1, completed);
-			// updateOrders.setLong(2, custID);
-			// updateOrders.setLong(3, ds_ID);
-			// updateOrders.setLong(4, order_ID);
-			// updateOrders.executeUpdate();
-			// updateOrders.close();
-			// updateOrders = null;
-
-
-			// ps2.close();
-			// ps2 = null;
-			// ps3.close();
-			// ps3 = null;
 		}
 		st.executeUpdate("COMMIT");
 		st.close();
 		st = null;
 		ps.close();
 		ps = null;
+	}
+	public static void updateDSData() throws SQLException {
+		Scanner read = new Scanner(System.in);
+		Statement st = connection.createStatement();
+		st.executeUpdate("SET TRANSACTION READ WRITE");
+		String selectQuery = ("SELECT * FROM ORDERS");
+		PreparedStatement ps = connection.prepareStatement(selectQuery);		
+		ResultSet resultSet = ps.executeQuery();
+		ResultSetMetaData rsmd = resultSet.getMetaData();
+		int columnsNumber = rsmd.getColumnCount();
+		while (resultSet.next()) {
+			// update order
+			int wh_id = resultSet.getInt(1);
+			int ds_ID = resultSet.getInt(2);
+			int custID = resultSet.getInt(3);
+			int order_ID = resultSet.getInt(4);
 
+			String selectQuery3 = ("SELECT SUM(YTD_PURCHASE_TOTAL) FROM CUSTOMERS WHERE WH_ID = ? AND DS_ID = ?");
+			PreparedStatement ps3 = connection.prepareStatement(selectQuery3);		
+			ps3.setLong(1, wh_id);
+			ps3.setLong(2, ds_ID);
+			ResultSet resultSet3 = ps3.executeQuery();
+			resultSet3.next();
+			double ytdSalesSum = resultSet3.getDouble(1);
+
+			String updateDSQuery = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
+			PreparedStatement updateDS = connection.prepareStatement(updateDSQuery);
+			updateDS.setDouble(1, ytdSalesSum);
+			updateDS.setLong(2, wh_id);
+			updateDS.setLong(3, ds_ID);
+			updateDS.executeUpdate();
+			updateDS.close();
+			updateDS = null;
+			ps3.close();
+			ps3 = null;
+
+		}
+		st.executeUpdate("COMMIT");
+		st.close();
+		st = null;
+		ps.close();
+		ps = null;
+	}
+	public static void updateWHData() throws SQLException {
+		Scanner read = new Scanner(System.in);
+		Statement st = connection.createStatement();
+		st.executeUpdate("SET TRANSACTION READ WRITE");
+		String selectQuery = ("SELECT * FROM ORDERS");
+		PreparedStatement ps = connection.prepareStatement(selectQuery);		
+		ResultSet resultSet = ps.executeQuery();
+		ResultSetMetaData rsmd = resultSet.getMetaData();
+		int columnsNumber = rsmd.getColumnCount();
+		while (resultSet.next()) {
+			// update order
+			int wh_id = resultSet.getInt(1);
+			int ds_ID = resultSet.getInt(2);
+			int custID = resultSet.getInt(3);
+			int order_ID = resultSet.getInt(4);
+
+			String selectQuery3 = ("SELECT SUM(YTD_SALES_SUM) FROM DISTSTATION WHERE WH_ID = ?");
+			PreparedStatement ps3 = connection.prepareStatement(selectQuery3);		
+			ps3.setLong(1, wh_id);
+			ResultSet resultSet3 = ps3.executeQuery();
+			resultSet3.next();
+			double ytdSalesSum = resultSet3.getDouble(1);
+
+			String updateDSQuery = ("UPDATE WAREHOUSE SET YTD_SALES_SUM = ? WHERE WH_ID=?");
+			PreparedStatement updateDS = connection.prepareStatement(updateDSQuery);
+			updateDS.setDouble(1, ytdSalesSum);
+			updateDS.setLong(2, wh_id);
+			updateDS.executeUpdate();
+			updateDS.close();
+			updateDS = null;
+			ps3.close();
+			ps3 = null;
+
+		}
+		st.executeUpdate("COMMIT");
+		st.close();
+		st = null;
+		ps.close();
+		ps = null;
+	}
+	//something is broken in here
+	public static void updateStockData() throws SQLException {
+		Scanner read = new Scanner(System.in);
+		Statement st = connection.createStatement();
+		st.executeUpdate("SET TRANSACTION READ WRITE");
+		String selectQuery = ("SELECT * FROM LINEITEMS");
+		PreparedStatement ps = connection.prepareStatement(selectQuery);		
+		ResultSet resultSet = ps.executeQuery();
+		ResultSetMetaData rsmd = resultSet.getMetaData();
+		int columnsNumber = rsmd.getColumnCount();
+		while (resultSet.next()) {
+			// update order
+			int wh_id = resultSet.getInt(1);
+			int ds_ID = resultSet.getInt(2);
+			int custID = resultSet.getInt(3);
+			int order_ID = resultSet.getInt(4);
+			int li_ID = resultSet.getInt(5);
+
+			String selectQuery3 = ("SELECT SUM(QUANTITY) as SUMSUM, ITEM_ID FROM LINEITEMS WHERE WH_ID = ? GROUP BY ITEM_ID");
+			PreparedStatement ps3 = connection.prepareStatement(selectQuery3);		
+			ps3.setLong(1, wh_id);
+			ResultSet resultSet3 = ps3.executeQuery();
+			while (resultSet3.next()) {
+
+
+				long itemID = resultSet3.getLong(2);
+				long qSold = resultSet3.getLong(1);
+
+				String selectQuery4 = ("SELECT QUANTITY_AVAILABLE, QUANTITY_SOLD FROM STOCK WHERE WH_ID = ? AND ITEM_ID = ?");
+				PreparedStatement ps4 = connection.prepareStatement(selectQuery4);		
+				ps4.setLong(1, wh_id);
+				ps4.setLong(2, itemID);
+				ResultSet resultSet4 = ps4.executeQuery();
+				if(resultSet4 != null)
+				{
+					resultSet4.next();
+					long qA = resultSet4.getLong(1);
+
+					String updateSQuery = ("UPDATE STOCK SET QUANTITY_AVAILABLE = ?, QUANTITY_SOLD = ? WHERE WH_ID=? AND ITEM_ID = ?");
+					PreparedStatement updateS = connection.prepareStatement(updateSQuery);
+					updateS.setDouble(1, qA - qSold);
+					updateS.setDouble(2, qSold);
+					updateS.setLong(3, wh_id);
+					updateS.setLong(4, itemID);
+					updateS.executeUpdate();
+					updateS.close();
+					updateS = null;
+				}
+				ps4.close();
+				ps4 = null;
+			}
+			ps3.close();
+			ps3 = null;
+
+		}
+		st.executeUpdate("COMMIT");
+		st.close();
+		st = null;
+		ps.close();
+		ps = null;
 	}
 	public static void GenOrderData(int numOrders) throws SQLException {
 		Random rand = new Random();
@@ -515,7 +636,6 @@ public class GroceryDeliveryDB {
 			}
 		}
 	}
-
 	public static void GenItemData(int numItems) throws SQLException {
 		Random rand = new Random();
 		int item_ID;
@@ -539,7 +659,6 @@ public class GroceryDeliveryDB {
 			ps = null;
 		}
 	}
-
 	public static void GenStockData(int numItems) throws SQLException {
 		Random rand = new Random();
 		int wh_ID;
@@ -553,7 +672,7 @@ public class GroceryDeliveryDB {
 				wh_ID = x;
 				item_ID = y;
 				quantity_avail = rand.nextInt(5000);
-				quantity_sold = rand.nextInt(5000);
+				quantity_sold = 0;
 				num_orders = rand.nextInt(20000);
 				// do a sql insert here using the JDBC
 				String insQuery = ("INSERT INTO Stock VALUES (?,?,?,?,?)");
@@ -569,7 +688,6 @@ public class GroceryDeliveryDB {
 			}
 		}
 	}
-
 	// This will generate a random string of characters
 	public static String generateString(int length) {
 		String characters = "abcdefghijklmnopqrstuvwxyz";
@@ -580,7 +698,6 @@ public class GroceryDeliveryDB {
 		}
 		return new String(text);
 	}
-
 	// This will generate alpha-numeric string for address
 	// Double check if that's how to append a space
 	public static String alphaNumString() {
@@ -598,7 +715,6 @@ public class GroceryDeliveryDB {
 
 		return temp.toString();
 	}
-
 	// This will generate random dates
 	public static String generateDate() {
 		StringBuilder temp = new StringBuilder();
@@ -769,7 +885,6 @@ public class GroceryDeliveryDB {
 
 		return temp.toString();
 	}
-
 	public static void viewDB() throws SQLException {
 		Statement stmt = connection.createStatement();
 		ResultSet rs = stmt.executeQuery("select * from Warehouse");
@@ -856,7 +971,6 @@ public class GroceryDeliveryDB {
 						rs3.getString(6), rs3.getLong(7));
 			}
 	}
-
 	public static void resetDatabase() throws SQLException {
 		System.out.println("Reseting the database...");
 		String s = new String();
@@ -884,6 +998,14 @@ public class GroceryDeliveryDB {
 						// System.out.println(">>"+rqts[i]);
 					}
 				}
+				st.execute("create or replace trigger ytdSalesUpdate"
+						+ "after insert or update on Customers"
+						+ "for each row"
+						+ "begin"
+						+ "update DistStation set YTD_SALES_SUM = (SELECT SUM(YTD_PURCHASE_TOTAL) FROM Customers WHERE DS_ID = :new.DS_ID;"
+						+ "update Warehouse set YTD_SALES_SUM = (SELECT SUM(YTD_PURCHASE_TOTAL) FROM Customers WHERE WH_ID = :new.WH_ID;"
+						+ "end;"
+						+ "/");
 			}
 		} catch (Exception e) {
 			System.out.println("Error: " + e.toString());
@@ -891,9 +1013,7 @@ public class GroceryDeliveryDB {
 			e.printStackTrace();
 			System.out.println(sb.toString());
 		}
-
 	}
-
 	public static void genDB() throws SQLException {
 		System.out.println("Creating the database...");
 		String s = new String();
@@ -921,6 +1041,14 @@ public class GroceryDeliveryDB {
 						// System.out.println(">>"+rqts[i]);
 					}
 				}
+				st.execute("create or replace trigger ytdSalesUpdate"
+						+ "after insert or update on Customers"
+						+ "for each row"
+						+ "begin"
+						+ "update DistStation set YTD_SALES_SUM = (SELECT SUM(YTD_PURCHASE_TOTAL) FROM Customers WHERE DS_ID = :new.DS_ID;"
+						+ "update Warehouse set YTD_SALES_SUM = (SELECT SUM(YTD_PURCHASE_TOTAL) FROM Customers WHERE WH_ID = :new.WH_ID;"
+						+ "end;"
+						+ "/");
 			}
 		} catch (Exception e) {
 			System.out.println("Error: " + e.toString());
@@ -928,9 +1056,7 @@ public class GroceryDeliveryDB {
 			e.printStackTrace();
 			System.out.println(sb.toString());
 		}
-
 	}
-
 	public static void newOrder() throws SQLException {
 		// read in all required information
 		Scanner read = new Scanner(System.in);
@@ -1075,7 +1201,6 @@ public class GroceryDeliveryDB {
 		st.close();
 		st = null;
 	}
-
 	public static void makePayment() throws SQLException {
 		Scanner read = new Scanner(System.in);
 		System.out.print("Please enter the id of your distribution center: ");
@@ -1176,7 +1301,6 @@ public class GroceryDeliveryDB {
 		ps.close();
 		ps = null;
 	}
-
 	//question is very ambiguous and either way the metric is not very useful
 	//due to the ambiguity of the returned result
 	public static void checkStockLevels() throws SQLException {
@@ -1311,33 +1435,6 @@ public class GroceryDeliveryDB {
 		ps.close();
 		ps = null;
 	}
-	public static void printshit() throws SQLException {
-		Scanner read = new Scanner(System.in);
-		System.out.print("Please enter the id of your warehouse: ");
-		int wh_id = read.nextInt();
-		String completed = "Incomplete";
-		Statement st = connection.createStatement();
-		st.executeUpdate("SET TRANSACTION READ WRITE");
-		String selectQuery = ("SELECT * FROM ORDERS WHERE WH_ID = ?");
-		PreparedStatement ps = connection.prepareStatement(selectQuery);		
-		ps.setLong(1, wh_id);
-		ResultSet resultSet = ps.executeQuery();
-		ResultSetMetaData rsmd = resultSet.getMetaData();
-		int columnsNumber = rsmd.getColumnCount();
-		while (resultSet.next()) {
-		    for (int i = 1; i <= columnsNumber; i++) {
-		        if (i > 1) System.out.print(",       ");
-		        String columnValue = resultSet.getString(i);
-		        System.out.print(rsmd.getColumnName(i) + " " + columnValue);
-		    }
-		    System.out.println("");
-		}
-		st.executeUpdate("COMMIT");
-		st.close();
-		st = null;
-		ps.close();
-		ps = null;
-	}
 	public static void checkOrderStatus() throws SQLException {
 		Scanner read = new Scanner(System.in);
 		System.out.print("Please enter the id of your distribution center: ");
@@ -1358,6 +1455,36 @@ public class GroceryDeliveryDB {
 		System.out.print("Customer "+custID+" from Distribution Station "+ds_id+"'s last order contained:\n");
 		while (resultSet.next()) {
 		    for (int i = 1; i <= columnsNumber; i++) {
+		        if (i > 1) System.out.print(",       ");
+		        String columnValue = resultSet.getString(i);
+		        System.out.print(rsmd.getColumnName(i) + " " + columnValue);
+		    }
+		    System.out.println("");
+		}
+		st.executeUpdate("COMMIT");
+		st.close();
+		st = null;
+		ps.close();
+		ps = null;
+	}
+
+
+	//helper function to print stuff
+	public static void printstuff() throws SQLException {
+		Scanner read = new Scanner(System.in);
+		System.out.print("Please enter the id of your warehouse: ");
+		int wh_id = read.nextInt();
+		String completed = "Incomplete";
+		Statement st = connection.createStatement();
+		st.executeUpdate("SET TRANSACTION READ WRITE");
+		String selectQuery = ("SELECT * FROM STOCK WHERE WH_ID = ?");
+		PreparedStatement ps = connection.prepareStatement(selectQuery);		
+		ps.setLong(1, wh_id);
+		ResultSet resultSet = ps.executeQuery();
+		ResultSetMetaData rsmd = resultSet.getMetaData();
+		int columnsNumber = rsmd.getColumnCount();
+		while (resultSet.next()) {
+		    for (int i = 1; i < columnsNumber; i++) {
 		        if (i > 1) System.out.print(",       ");
 		        String columnValue = resultSet.getString(i);
 		        System.out.print(rsmd.getColumnName(i) + " " + columnValue);
