@@ -792,7 +792,7 @@ public class GroceryDeliveryDB {
 	}
 
 	public static void genDB() throws SQLException {
-		System.out.println("Reseting the database...");
+		System.out.println("Creating the database...");
 		String s = new String();
 		StringBuffer sb = new StringBuffer();
 
