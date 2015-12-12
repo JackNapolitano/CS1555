@@ -166,17 +166,17 @@ public class GroceryDeliveryDB {
 			System.out
 					.println("Generating data for the database... (takes a few minutes)");
 			System.out.println("Generating items...");
-			GenItemData(10000);// 10000 unique grocery items
+			GenItemData(1000);// 1000 unique grocery items
 			System.out.println("Generating warehouse...");
 			GenWarehouseData(1); // number of warehouses
 			System.out.println("Generating distribution stations...");
 			GenDistStationData(8);// 8 DS per HW
 			System.out.println("Generating customers...");
-			GenCustomerData(3000);// 3000 customers per DS
+			GenCustomerData(100);// 100 customers per DS
 			System.out.println("Generating orders and line items...");
-			GenOrderData(100);// between 1-100 orders per cust3
+			GenOrderData(50);// between 1-50 orders per cust3
 			System.out.println("Generating stock entries...");
-			GenStockData(10000);// 10000 stock listings per warehouse
+			GenStockData(1000);// 1000 stock listings per warehouse
 			System.out.println("Updating data to reflect sales... (sales sum, num deliveries, etc..)");
 			//DATA CONSISTENCY BELOW
 			updateCustData();
@@ -568,7 +568,7 @@ public class GroceryDeliveryDB {
 		for (int w = 0; w < warehouses; w++) {
 			for (int x = 0; x < distPerWarehouse; x++) {
 				for (int y = 0; y < custPerDist; y++) {
-					System.out.println("Customer " + y);
+					//System.out.println("Customer " + y);
 					int numOrd = rand.nextInt(numOrders) + 1; // generates a
 																// number of
 																// orders from
@@ -595,13 +595,13 @@ public class GroceryDeliveryDB {
 						ps.executeUpdate();
 						ps.close();
 						ps = null;
-						int numLItems = rand.nextInt((15 - 5) + 1) + 5; // generates
+						int numLItems = rand.nextInt((10 - 3) + 1) + 3; // generates
 																		// random
 																		// number
 																		// of
 																		// line
 																		// items
-																		// 1-15
+																		// 3-10
 						for (int a = 0; a < numLItems; a++) {
 							// generate the data
 							wh_ID = w;
