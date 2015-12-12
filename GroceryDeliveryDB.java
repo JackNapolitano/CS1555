@@ -598,17 +598,18 @@ public class GroceryDeliveryDB {
 			// Between 3 and 10 line items per order
 			System.out.println("Generating data for the database... (takes a few minutes)");
 			System.out.println("Generating items...");
-			GenItemData(100);// 1000 unique grocery items
+			GenItemData(1000);// 1000 unique grocery items
 			System.out.println("Generating warehouse...");
 			GenWarehouseData(1); // number of warehouses
+			System.out.println("Generating stock entries...");
+			GenStockData(1000, 1);
 			System.out.println("Generating distribution stations...");
 			GenDistStationData(8);// 8 DS per HW
 			System.out.println("Generating customers...");
 			GenCustomerData(100);// 100 customers per DS
 			System.out.println("Generating orders and line items...");
-			GenOrderData(50);// between 1-100 orders per cust3
-			System.out.println("Generating stock entries...");
-			GenStockData(1000);// 10000 stock listings per warehouse
+			GenOrderData(50);// between 1-50 orders per cust3
+
 			System.out.println("Updating data to reflect sales... (sales sum, num deliveries, etc..)");
 			//DATA CONSISTENCY BELOW
 			updateCustData();
@@ -616,6 +617,20 @@ public class GroceryDeliveryDB {
 			updateWHData();
 			//updateStockData();
 
+			//data consistancy is done through the functions above up until this point.
+			//to keep data consistent here on out, we will use triggers
+			// try {
+			// 	if (connection != null) 
+			// 	{
+			// 		Statement st = connection.createStatement();
+			// 		st.execute("CREATE OR REPLACE TRIGGER ytdSalesUpdate AFTER INSERT OR UPDATE ON Customers FOR EACH ROW BEGIN update DistStation set YTD_SALES_SUM = (SELECT SUM(YTD_PURCHASE_TOTAL) FROM Customers WHERE DS_ID = :new.DS_ID); update Warehouse set YTD_SALES_SUM = (SELECT SUM(YTD_PURCHASE_TOTAL) FROM Customers WHERE WH_ID = :new.WH_ID); end;");
+			// 		st.close();
+			// 	}
+			// } catch (Exception e) {
+			// 	System.out.println("Error: " + e.toString());
+			// 	System.out.println("Error: ");
+			// 	e.printStackTrace();
+			// }
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -1095,14 +1110,14 @@ public class GroceryDeliveryDB {
 			ps = null;
 		}
 	}
-	public static void GenStockData(int numItems) throws SQLException {
+	public static void GenStockData(int numItems, int warehouseCount) throws SQLException {
 		Random rand = new Random();
 		int wh_ID;
 		int item_ID;
 		int quantity_avail;
 		int quantity_sold;
 		int num_orders;
-		for (int x = 0; x < warehouses; x++) {
+		for (int x = 0; x < warehouseCount; x++) {
 			for (int y = 0; y < numItems; y++) {
 				// generate the data
 				wh_ID = x;
@@ -1443,14 +1458,6 @@ public class GroceryDeliveryDB {
 						// System.out.println(">>"+rqts[i]);
 					}
 				}
-				st.execute("create or replace trigger ytdSalesUpdate"
-						+ "after insert or update on Customers"
-						+ "for each row"
-						+ "begin"
-						+ "update DistStation set YTD_SALES_SUM = (SELECT SUM(YTD_PURCHASE_TOTAL) FROM Customers WHERE DS_ID = :new.DS_ID;"
-						+ "update Warehouse set YTD_SALES_SUM = (SELECT SUM(YTD_PURCHASE_TOTAL) FROM Customers WHERE WH_ID = :new.WH_ID;"
-						+ "end;"
-						+ "/");
 			}
 		} catch (Exception e) {
 			System.out.println("Error: " + e.toString());
@@ -1477,7 +1484,8 @@ public class GroceryDeliveryDB {
 			// split each request
 			String[] rqts = sb.toString().split(";");
 
-			if (connection != null) {
+			if (connection != null) 
+			{
 				Statement st = connection.createStatement();
 
 				for (int i = 0; i < rqts.length; i++) {
@@ -1486,14 +1494,6 @@ public class GroceryDeliveryDB {
 						// System.out.println(">>"+rqts[i]);
 					}
 				}
-				st.execute("create or replace trigger ytdSalesUpdate"
-						+ "after insert or update on Customers"
-						+ "for each row"
-						+ "begin"
-						+ "update DistStation set YTD_SALES_SUM = (SELECT SUM(YTD_PURCHASE_TOTAL) FROM Customers WHERE DS_ID = :new.DS_ID;"
-						+ "update Warehouse set YTD_SALES_SUM = (SELECT SUM(YTD_PURCHASE_TOTAL) FROM Customers WHERE WH_ID = :new.WH_ID;"
-						+ "end;"
-						+ "/");
 			}
 		} catch (Exception e) {
 			System.out.println("Error: " + e.toString());
