@@ -32,7 +32,8 @@ public class GroceryDeliveryDB {
 	private static int distPerWarehouse;
 	private static int custPerDist;
 
-	public static void main(String[] args) throws SQLException, ClassNotFoundException {
+	public static void main(String[] args) throws SQLException,
+			ClassNotFoundException {
 		Scanner reader = new Scanner(System.in); // Reading from System.in
 		// Should we prompt user instead of hard coding this??
 		System.out.print("Please enter your DB username: ");
@@ -92,433 +93,6 @@ public class GroceryDeliveryDB {
 			}
 		}
 	}
-
-
-	/////////////////////////////////////////////////////
-	//////////////////TRANSACTIONS///////////////////////	
-	/////////////////////////////////////////////////////
-	//TX1
-	public static void newOrder() throws SQLException {
-		// read in all required information
-		Scanner read = new Scanner(System.in);
-		System.out.print("Please enter your distribution station id: ");
-		int ds_ID = 0;
-		try {
-			ds_ID = Integer.parseInt(read.nextLine());
-		} catch (NumberFormatException e) {
-			e.printStackTrace();
-		}
-
-		System.out.print("Please enter the unique customer id: ");
-		int custID = 0;
-		try {
-			custID = Integer.parseInt(read.nextLine());
-		} catch (NumberFormatException e) {
-			e.printStackTrace();
-		}
-
-		System.out
-				.print("Enter the ids of the items in the order separated by commas: ");
-		String itemIDs = read.nextLine();
-		System.out
-				.print("Enter the quantities of each item separated by commas: ");
-		String itemQuantities = read.nextLine();
-		System.out.print("Enter the total number of items ordered: ");
-		int totalItems = read.nextInt();
-
-		// parse itemIDs and quantities
-		itemIDs = itemIDs.replaceAll("\\s+", ""); // first remove any spaces
-		String[] items = itemIDs.split(",");
-		itemQuantities = itemQuantities.replaceAll("\\s+", "");
-		String[] quantities = itemQuantities.split(",");
-
-		List<Integer> iIds = new ArrayList<Integer>();
-		for (String s : items) {
-			iIds.add(Integer.parseInt(s));
-		}
-		List<Integer> iQuantities = new ArrayList<Integer>();
-		for (String s : quantities) {
-			iQuantities.add(Integer.parseInt(s));
-		}
-
-		int tItems = 0;
-		for (int i : iQuantities) {
-			tItems = tItems + i;
-		}
-
-		if ((iIds.size() != iQuantities.size())) {
-			System.out
-					.println("The number of item ids and quantites must match. Please try the order again.");
-			return;
-		} else if (tItems != totalItems) {
-			System.out
-					.println("The total number of items and the sum of all quantities must match. Please try the order again.");
-			return;
-		}
-		Statement st = connection.createStatement();
-		st.executeQuery("SET TRANSACTION READ WRITE");
-		// get WH_ID from Customers table
-		String whQuery = "SELECT * FROM CUSTOMERS WHERE CUST_ID = ? AND DS_ID = ?";
-		PreparedStatement getWHID = connection.prepareStatement(whQuery);
-		getWHID.setLong(1, custID);
-		getWHID.setLong(2, ds_ID);
-		ResultSet whRS = getWHID.executeQuery();
-		while (whRS.next()) {
-			int wh_ID = whRS.getInt(1);
-			// get last order ID for customer and increment it by 1
-			String ordIDQuery = "SELECT MAX(ORDER_ID) FROM ORDERS WHERE CUST_ID=? AND DS_ID=?";
-			PreparedStatement maxOrdID = connection
-					.prepareStatement(ordIDQuery);
-			maxOrdID.setLong(1, custID);
-			maxOrdID.setLong(2, ds_ID);
-			ResultSet maxOrd = maxOrdID.executeQuery();
-			while (maxOrd.next()) {
-				int maxOrderID = maxOrd.getInt(1);
-				int newOrderID = maxOrderID + 1;
-
-				// create new order
-				String insertOrder = "INSERT INTO Orders VALUES (?,?,?,?,?,?,?)";
-				PreparedStatement insNewOrder = connection
-						.prepareStatement(insertOrder);
-				insNewOrder.setLong(1, wh_ID);
-				insNewOrder.setLong(2, ds_ID);
-				insNewOrder.setLong(3, custID);
-				insNewOrder.setLong(4, newOrderID);
-				java.sql.Date datePurchased = new java.sql.Date(
-						(new java.util.Date()).getTime());
-				insNewOrder.setDate(5, datePurchased);
-				insNewOrder.setString(6, "Incomplete");
-				insNewOrder.setLong(7, totalItems);
-				insNewOrder.executeUpdate();
-
-				// create line item entries for order
-				for (int i = 0; i < iIds.size(); i++) {
-					String liInsert = "INSERT INTO LineItems VALUES (?,?,?,?,?,?,?,?,?)";
-					PreparedStatement insLI = connection
-							.prepareStatement(liInsert);
-					insLI.setLong(1, wh_ID);
-					insLI.setLong(2, ds_ID);
-					insLI.setLong(3, custID);
-					insLI.setLong(4, newOrderID);
-					insLI.setLong(5, i);
-					insLI.setLong(6, iIds.get(i));
-					insLI.setLong(7, iQuantities.get(i));
-
-					// calculate total cost
-					String priceQuery = "SELECT PRICE FROM ITEMS WHERE ITEM_ID =?";
-					PreparedStatement pricePS = connection
-							.prepareStatement(priceQuery);
-					pricePS.setLong(1, iIds.get(i));
-					ResultSet priceRS = pricePS.executeQuery();
-					double price = 0;
-					while (priceRS.next()) {
-						price = priceRS.getDouble(1);
-						break;
-					}
-
-					if (price == 0) {
-						System.out
-								.println("Could not retrieve item price. Please check the item ID.");
-						return;
-					}
-
-					double totalPrice = price * iQuantities.get(i);
-					insLI.setDouble(8, totalPrice);
-					insLI.setDate(9, null);
-					insLI.executeUpdate();
-					insLI.close();
-					insLI = null;
-				}
-				insNewOrder.close();
-				insNewOrder = null;
-			}
-			maxOrd.close();
-			maxOrd = null;
-		}
-		whRS.close();
-		whRS = null;
-		st.executeQuery("COMMIT");
-		st.close();
-		st = null;
-	}
-	//TX2
-	public static void makePayment() throws SQLException {
-		Scanner read = new Scanner(System.in);
-		System.out.print("Please enter the id of your distribution center: ");
-		int ds_id = read.nextInt();
-		System.out.print("Please enter your unique customer id: ");
-		int custID = read.nextInt();
-		System.out.print("Please enter your payment amount: ");
-		double payAmt = read.nextDouble();
-		Statement st = connection.createStatement();
-		st.executeUpdate("SET TRANSACTION READ WRITE");
-		String selectQuery = ("SELECT * FROM CUSTOMERS WHERE CUST_ID = ? AND DS_ID = ?");
-		PreparedStatement ps = connection.prepareStatement(selectQuery);
-		ps.setLong(1, custID);
-		ps.setLong(2, ds_id);
-		ResultSet rs = ps.executeQuery();
-		if (rs == null) {
-			System.out.println("No matching entries found.");
-			return;
-		}
-		int numPay, wh_id;
-		double debtAmt;
-		String debt;
-		while (rs.next()) {
-			debt = rs.getString(14);
-			debtAmt = Double.parseDouble(debt);
-			numPay = rs.getInt(16);
-			wh_id = rs.getInt(1);
-
-			// get YTD_SALES_SUM for ds so that is may also be updated
-			String ytdSales = ("SELECT YTD_SALES_SUM FROM DISTSTATION WHERE WH_ID=? AND DS_ID=?");
-			PreparedStatement ytdPrep = connection.prepareStatement(ytdSales);
-			ytdPrep.setLong(1, wh_id);
-			ytdPrep.setLong(2, ds_id);
-			ResultSet ytdRS = ytdPrep.executeQuery();
-			while (ytdRS.next()) {
-				float ytdSalesSum = ytdRS.getFloat(1);
-
-				if (payAmt >= debtAmt) {
-					double extra = payAmt - debtAmt;
-					String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=? AND DS_ID=?");
-					PreparedStatement prep = connection
-							.prepareStatement(updateQuery);
-					prep.setLong(1, 0);
-					prep.setInt(2, custID);
-					prep.setInt(3, ds_id);
-					prep.executeUpdate();
-					prep.close();
-					prep = null;
-					System.out
-							.println("A payment of $"
-									+ debtAmt
-									+ " has been applied to your account and $"
-									+ extra
-									+ " has been refunded to you. Your current debt is $0.");
-					ytdSalesSum = ytdSalesSum + (float) debtAmt;
-					String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
-					PreparedStatement ytdp = connection
-							.prepareStatement(updateYTD);
-					ytdp.setFloat(1, ytdSalesSum);
-					ytdp.setLong(2, wh_id);
-					ytdp.setLong(3, ds_id);
-					ytdp.executeUpdate();
-
-				} else {
-					float newDebt = (float) debtAmt - (float) payAmt;
-					String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=? AND DS_ID=?");
-					PreparedStatement prep = connection
-							.prepareStatement(updateQuery);
-					prep.setFloat(1, newDebt);
-					prep.setInt(2, custID);
-					prep.setInt(3, ds_id);
-					prep.executeUpdate();
-					prep.close();
-					prep = null;
-					System.out
-							.println("A payment of $"
-									+ payAmt
-									+ " has been applied to your account and your current debt is $"
-									+ newDebt + ".");
-					ytdSalesSum = ytdSalesSum + (float) payAmt;
-					String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
-					PreparedStatement ytdp = connection
-							.prepareStatement(updateYTD);
-					ytdp.setFloat(1, ytdSalesSum);
-					ytdp.setLong(2, wh_id);
-					ytdp.setLong(3, ds_id);
-					ytdp.executeUpdate();
-					ytdp.close();
-					ytdp = null;
-					st.executeUpdate("COMMIT");
-					st.close();
-					st = null;
-				}
-			}
-			ytdRS.close();
-			ytdRS = null;
-		}
-		ps.close();
-		ps = null;
-	}
-	//question is very ambiguous and either way the metric is not very useful
-	//due to the ambiguity of the returned result
-	//TX3
-	public static void checkStockLevels() throws SQLException {
-		Scanner read = new Scanner(System.in);
-		//this is for when there is more than 1 warehouse since ds_ids are not globally unique
-		System.out.print("Please enter your warehouse id: ");
-		int wh_id = read.nextInt();
-		System.out.print("Please enter distribution station id: ");
-		int ds_id = read.nextInt();
-		System.out.print("Please enter the stock threshold you wish to check: ");
-		int stockThreshold = read.nextInt();
-		
-		
-		Statement st = connection.createStatement();
-		st.executeQuery("SET TRANSACTION READ WRITE");
-		//return the number of unique items sold recently that are below stock threshold
-		String top20 = "SELECT COUNT(QUANTITY_AVAILABLE) FROM (SELECT QUANTITY_AVAILABLE FROM STOCK NATURAL JOIN (SELECT ITEM_ID FROM LINEITEMS NATURAL JOIN (SELECT ORDER_ID FROM (SELECT * FROM ORDERS WHERE DS_ID = ? AND WH_ID =? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <=20))) WHERE QUANTITY_AVAILABLE < ?";
-		PreparedStatement top20Orders = connection.prepareStatement(top20);
-		top20Orders.setLong(1, ds_id);
-		top20Orders.setLong(2, wh_id);
-		top20Orders.setLong(3, stockThreshold);
-		ResultSet rs = top20Orders.executeQuery();
-		while(rs.next()){
-			System.out.println("There are "+rs.getLong(1)+ " items in warehouse "+ wh_id+ " have a stock below "+ stockThreshold+".");
-		}
-		
-		top20Orders.close();
-		top20Orders = null;
-		
-		//return the sum of quantities purchased recently for items below stock threshold
-		String pQuantities = "SELECT QUANTITY FROM STOCK NATURAL JOIN (SELECT ITEM_ID, QUANTITY FROM LINEITEMS NATURAL JOIN (SELECT ORDER_ID FROM (SELECT * FROM ORDERS WHERE DS_ID = ? AND WH_ID =? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <=20)) WHERE QUANTITY_AVAILABLE < ?";
-		PreparedStatement qTop20 = connection.prepareStatement(pQuantities);
-		int sum = 0;
-		qTop20.setLong(1, ds_id);
-		qTop20.setLong(2, wh_id);
-		qTop20.setLong(3, stockThreshold);
-		ResultSet qRS = qTop20.executeQuery();
-		while (qRS.next()){
-			sum = sum + qRS.getInt(1);
-		}
-		
-		qRS.close();
-		qRS = null;
-		System.out.println(sum+ " items were purchase recently that are below the stock threshold, "+stockThreshold+ " in warehouse "+wh_id+".");
-		
-		st.executeQuery("COMMIT");
-		st.close();
-		st = null;
-	}
-	//TX4
-	public static void deliverItems() throws SQLException {
-		Scanner read = new Scanner(System.in);
-		System.out.print("Please enter the id of your warehouse: ");
-		int wh_id = read.nextInt();
-		String incomplete = "Incomplete";
-		String completed = "Completed";
-		Statement st = connection.createStatement();
-		st.executeUpdate("SET TRANSACTION READ WRITE");
-		String selectQuery = ("SELECT DS_ID, CUST_ID, ORDER_ID, COMPLETED_FLAG FROM ORDERS WHERE WH_ID = ? AND COMPLETED_FLAG = ? ");
-		PreparedStatement ps = connection.prepareStatement(selectQuery);		
-		ps.setLong(1, wh_id);
-		ps.setString(2, incomplete);
-		ResultSet resultSet = ps.executeQuery();
-		ResultSetMetaData rsmd = resultSet.getMetaData();
-		int columnsNumber = rsmd.getColumnCount();
-		while (resultSet.next()) {
-			// update order
-			int custID = resultSet.getInt(2);
-			int ds_ID = resultSet.getInt(1);
-			int order_ID = resultSet.getInt(3);
-
-			String selectQuery2 = ("SELECT TOTAL_COST FROM LINEITEMS WHERE WH_ID = ? AND DS_ID = ? AND CUST_ID = ? AND ORDER_ID = ? ");
-			PreparedStatement ps2 = connection.prepareStatement(selectQuery2);		
-			ps2.setLong(1, wh_id);
-			ps2.setLong(2, ds_ID);
-			ps2.setLong(3, custID);
-			ps2.setLong(4, order_ID);
-			ResultSet resultSet2 = ps2.executeQuery();
-			resultSet2.next();
-			double totalCostLI = resultSet2.getDouble(1);
-			//updates lineitems with the date delivered
-			String updateLineItemsQuery = ("UPDATE LINEITEMS SET DATE_DELIVERED = ? WHERE CUST_ID=? AND DS_ID=? AND ORDER_ID = ?");
-			PreparedStatement updateLineItems = connection.prepareStatement(updateLineItemsQuery);
-			java.sql.Date dateDeliv = new java.sql.Date((new java.util.Date()).getTime());
-			updateLineItems.setDate(1, dateDeliv);
-			updateLineItems.setLong(2, custID);
-			updateLineItems.setLong(3, ds_ID);
-			updateLineItems.setLong(4, order_ID);
-			updateLineItems.executeUpdate();
-			updateLineItems.close();
-			updateLineItems = null;
-
-			//updates Customer Debt
-			String selectQuery3 = ("SELECT DEBT FROM CUSTOMERS WHERE WH_ID = ? AND DS_ID = ? AND CUST_ID = ?");
-			PreparedStatement ps3 = connection.prepareStatement(selectQuery3);	
-			ps3.setLong(1, wh_id);
-			ps3.setLong(2, ds_ID);
-			ps3.setLong(3, custID);
-			ResultSet resultSet3 = ps3.executeQuery();
-			resultSet3.next();
-			double currentDebt = resultSet3.getDouble(1);;
-			double totalCost = currentDebt + totalCostLI;
-			String updateCustomerQuery = ("UPDATE CUSTOMERS SET DEBT=? WHERE CUST_ID=? AND DS_ID=?");
-			PreparedStatement updateCustomers = connection.prepareStatement(updateCustomerQuery);
-			updateCustomers.setDouble(1, totalCost);
-			updateCustomers.setLong(2, custID);
-			updateCustomers.setLong(3, ds_ID);
-			updateCustomers.executeUpdate();
-			updateCustomers.close();
-			updateCustomers = null;
-
-			//Changes orders from incomplete to completed
-			String updateOrdersQuery = ("UPDATE ORDERS SET COMPLETED_FLAG=? WHERE CUST_ID=? AND DS_ID=? AND ORDER_ID = ?");
-			PreparedStatement updateOrders = connection.prepareStatement(updateOrdersQuery);
-			updateOrders.setString(1, completed);
-			updateOrders.setLong(2, custID);
-			updateOrders.setLong(3, ds_ID);
-			updateOrders.setLong(4, order_ID);
-			updateOrders.executeUpdate();
-			updateOrders.close();
-			updateOrders = null;
-
-
-			ps2.close();
-			ps2 = null;
-			ps3.close();
-			ps3 = null;
-		}
-		st.executeUpdate("COMMIT");
-		st.close();
-		st = null;
-		ps.close();
-		ps = null;
-	}
-	//TX5
-	public static void checkOrderStatus() throws SQLException {
-		Scanner read = new Scanner(System.in);
-		System.out.print("Please enter the id of your distribution center: ");
-		int ds_id = read.nextInt();
-		System.out.print("Please enter your unique customer id: ");
-		int custID = read.nextInt();
-		Statement st = connection.createStatement();
-		st.executeUpdate("SET TRANSACTION READ WRITE");
-		String selectQuery = ("SELECT ITEM_ID, QUANTITY, TOTAL_COST, DATE_DELIVERED FROM LineItems WHERE CUST_ID = ? AND DS_ID = ? AND ORDER_ID = (SELECT ORDER_ID AS O_ID FROM (SELECT * FROM ORDERS WHERE CUST_ID = ? AND DS_ID = ? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <= 1) ORDER BY ITEM_ID ASC");
-		PreparedStatement ps = connection.prepareStatement(selectQuery);		
-		ps.setLong(1, custID);
-		ps.setLong(2, ds_id);
-		ps.setLong(3, custID);
-		ps.setLong(4, ds_id);
-		ResultSet resultSet = ps.executeQuery();
-		ResultSetMetaData rsmd = resultSet.getMetaData();
-		int columnsNumber = rsmd.getColumnCount();
-		System.out.print("Customer "+custID+" from Distribution Station "+ds_id+"'s last order contained:\n");
-		while (resultSet.next()) {
-		    for (int i = 1; i <= columnsNumber; i++) {
-		        if (i > 1) System.out.print(",       ");
-		        String columnValue = resultSet.getString(i);
-		        System.out.print(rsmd.getColumnName(i) + " " + columnValue);
-		    }
-		    System.out.println("");
-		}
-		st.executeUpdate("COMMIT");
-		st.close();
-		st = null;
-		ps.close();
-		ps = null;
-	}
-	/////////////////////////////////////////////////////
-	//////////////////END TRANSACTIONS///////////////////	
-	/////////////////////////////////////////////////////
-
-
-
-	/////////////////////////////////////////////////////
-	//////////////////INITILIZATION FUNCTIONS////////////	
-	/////////////////////////////////////////////////////
 	public static void dropTables() throws SQLException {
 		String selectQuery = ("DROP TABLE Stock");
 		PreparedStatement ps = connection.prepareStatement(selectQuery);
@@ -589,16 +163,10 @@ public class GroceryDeliveryDB {
 
 		// gen the data for the db
 		try {
-			// 1 warehouse
-			// 8 distribution stations per warehouse
-			// 100 customers per distribution station
-			// 1000 items
-			// 1000 stock listings per warehouse
-			// Between 1 and 50 orders per customer
-			// Between 3 and 10 line items per order
-			System.out.println("Generating data for the database... (takes a few minutes)");
+			System.out
+					.println("Generating data for the database... (takes a few minutes)");
 			System.out.println("Generating items...");
-			GenItemData(100);// 1000 unique grocery items
+			GenItemData(1000);// 1000 unique grocery items
 			System.out.println("Generating warehouse...");
 			GenWarehouseData(1); // number of warehouses
 			System.out.println("Generating distribution stations...");
@@ -606,9 +174,9 @@ public class GroceryDeliveryDB {
 			System.out.println("Generating customers...");
 			GenCustomerData(100);// 100 customers per DS
 			System.out.println("Generating orders and line items...");
-			GenOrderData(50);// between 1-100 orders per cust3
+			GenOrderData(50);// between 1-50 orders per cust3
 			System.out.println("Generating stock entries...");
-			GenStockData(1000);// 10000 stock listings per warehouse
+			GenStockData(1000);// 1000 stock listings per warehouse
 			System.out.println("Updating data to reflect sales... (sales sum, num deliveries, etc..)");
 			//DATA CONSISTENCY BELOW
 			updateCustData();
@@ -620,10 +188,6 @@ public class GroceryDeliveryDB {
 			e.printStackTrace();
 		}
 	}
-
-	/////////////////////////////////////////////////////
-	//////////////DATA GENERATION FUNCTIONS//////////////	
-	/////////////////////////////////////////////////////
 	public static void GenWarehouseData(int numWH) throws SQLException {
 		warehouses = numWH;
 		Random rand = new Random();
@@ -1004,7 +568,7 @@ public class GroceryDeliveryDB {
 		for (int w = 0; w < warehouses; w++) {
 			for (int x = 0; x < distPerWarehouse; x++) {
 				for (int y = 0; y < custPerDist; y++) {
-					System.out.println("Customer " + y);
+					//System.out.println("Customer " + y);
 					int numOrd = rand.nextInt(numOrders) + 1; // generates a
 																// number of
 																// orders from
@@ -1031,13 +595,13 @@ public class GroceryDeliveryDB {
 						ps.executeUpdate();
 						ps.close();
 						ps = null;
-						int numLItems = rand.nextInt((15 - 5) + 1) + 5; // generates
+						int numLItems = rand.nextInt((10 - 3) + 1) + 3; // generates
 																		// random
 																		// number
 																		// of
 																		// line
 																		// items
-																		// 1-15
+																		// 3-10
 						for (int a = 0; a < numLItems; a++) {
 							// generate the data
 							wh_ID = w;
@@ -1124,11 +688,6 @@ public class GroceryDeliveryDB {
 			}
 		}
 	}
-
-
-	/////////////////////////////////////////////////////
-	/////////DATA GENERATION HELPER FUNCTIONS////////////	
-	/////////////////////////////////////////////////////
 	// This will generate a random string of characters
 	public static String generateString(int length) {
 		String characters = "abcdefghijklmnopqrstuvwxyz";
@@ -1326,10 +885,6 @@ public class GroceryDeliveryDB {
 
 		return temp.toString();
 	}
-
-	/////////////////////////////////////////////////////
-	//////////////////OTHER FUNCTIONS////////////////////	
-	/////////////////////////////////////////////////////
 	public static void viewDB() throws SQLException {
 		Statement stmt = connection.createStatement();
 		ResultSet rs = stmt.executeQuery("select * from Warehouse");
@@ -1502,6 +1057,418 @@ public class GroceryDeliveryDB {
 			System.out.println(sb.toString());
 		}
 	}
+	public static void newOrder() throws SQLException {
+		// read in all required information
+		Scanner read = new Scanner(System.in);
+		System.out.print("Please enter your distribution station id: ");
+		int ds_ID = 0;
+		try {
+			ds_ID = Integer.parseInt(read.nextLine());
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}
+
+		System.out.print("Please enter the unique customer id: ");
+		int custID = 0;
+		try {
+			custID = Integer.parseInt(read.nextLine());
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}
+
+		System.out
+				.print("Enter the ids of the items in the order separated by commas: ");
+		String itemIDs = read.nextLine();
+		System.out
+				.print("Enter the quantities of each item separated by commas: ");
+		String itemQuantities = read.nextLine();
+		System.out.print("Enter the total number of items ordered: ");
+		int totalItems = read.nextInt();
+
+		// parse itemIDs and quantities
+		itemIDs = itemIDs.replaceAll("\\s+", ""); // first remove any spaces
+		String[] items = itemIDs.split(",");
+		itemQuantities = itemQuantities.replaceAll("\\s+", "");
+		String[] quantities = itemQuantities.split(",");
+
+		List<Integer> iIds = new ArrayList<Integer>();
+		for (String s : items) {
+			iIds.add(Integer.parseInt(s));
+		}
+		List<Integer> iQuantities = new ArrayList<Integer>();
+		for (String s : quantities) {
+			iQuantities.add(Integer.parseInt(s));
+		}
+
+		int tItems = 0;
+		for (int i : iQuantities) {
+			tItems = tItems + i;
+		}
+
+		if ((iIds.size() != iQuantities.size())) {
+			System.out
+					.println("The number of item ids and quantites must match. Please try the order again.");
+			return;
+		} else if (tItems != totalItems) {
+			System.out
+					.println("The total number of items and the sum of all quantities must match. Please try the order again.");
+			return;
+		}
+
+		Statement st = connection.createStatement();
+		st.executeQuery("SET TRANSACTION READ WRITE");
+		// get WH_ID from Customers table
+		String whQuery = "SELECT * FROM CUSTOMERS WHERE CUST_ID = ? AND DS_ID = ?";
+		PreparedStatement getWHID = connection.prepareStatement(whQuery);
+		getWHID.setLong(1, custID);
+		getWHID.setLong(2, ds_ID);
+		ResultSet whRS = getWHID.executeQuery();
+		while (whRS.next()) {
+			int wh_ID = whRS.getInt(1);
+			// get last order ID for customer and increment it by 1
+			String ordIDQuery = "SELECT MAX(ORDER_ID) FROM ORDERS WHERE CUST_ID=? AND DS_ID=?";
+			PreparedStatement maxOrdID = connection
+					.prepareStatement(ordIDQuery);
+			maxOrdID.setLong(1, custID);
+			maxOrdID.setLong(2, ds_ID);
+			ResultSet maxOrd = maxOrdID.executeQuery();
+			while (maxOrd.next()) {
+				int maxOrderID = maxOrd.getInt(1);
+				int newOrderID = maxOrderID + 1;
+
+				// create new order
+				String insertOrder = "INSERT INTO Orders VALUES (?,?,?,?,?,?,?)";
+				PreparedStatement insNewOrder = connection
+						.prepareStatement(insertOrder);
+				insNewOrder.setLong(1, wh_ID);
+				insNewOrder.setLong(2, ds_ID);
+				insNewOrder.setLong(3, custID);
+				insNewOrder.setLong(4, newOrderID);
+				java.sql.Date datePurchased = new java.sql.Date(
+						(new java.util.Date()).getTime());
+				insNewOrder.setDate(5, datePurchased);
+				insNewOrder.setString(6, "Incomplete");
+				insNewOrder.setLong(7, totalItems);
+				insNewOrder.executeUpdate();
+
+				// create line item entries for order
+				for (int i = 0; i < iIds.size(); i++) {
+					String liInsert = "INSERT INTO LineItems VALUES (?,?,?,?,?,?,?,?,?)";
+					PreparedStatement insLI = connection
+							.prepareStatement(liInsert);
+					insLI.setLong(1, wh_ID);
+					insLI.setLong(2, ds_ID);
+					insLI.setLong(3, custID);
+					insLI.setLong(4, newOrderID);
+					insLI.setLong(5, i);
+					insLI.setLong(6, iIds.get(i));
+					insLI.setLong(7, iQuantities.get(i));
+
+					// calculate total cost
+					String priceQuery = "SELECT PRICE FROM ITEMS WHERE ITEM_ID =?";
+					PreparedStatement pricePS = connection
+							.prepareStatement(priceQuery);
+					pricePS.setLong(1, iIds.get(i));
+					ResultSet priceRS = pricePS.executeQuery();
+					double price = 0;
+					while (priceRS.next()) {
+						price = priceRS.getDouble(1);
+						break;
+					}
+
+					if (price == 0) {
+						System.out
+								.println("Could not retrieve item price. Please check the item ID.");
+						return;
+					}
+
+					double totalPrice = price * iQuantities.get(i);
+					insLI.setDouble(8, totalPrice);
+					insLI.setDate(9, null);
+					insLI.executeUpdate();
+					insLI.close();
+					insLI = null;
+				}
+				insNewOrder.close();
+				insNewOrder = null;
+			}
+			maxOrd.close();
+			maxOrd = null;
+		}
+		whRS.close();
+		whRS = null;
+		st.executeQuery("COMMIT");
+		st.close();
+		st = null;
+	}
+	public static void makePayment() throws SQLException {
+		Scanner read = new Scanner(System.in);
+		System.out.print("Please enter the id of your distribution center: ");
+		int ds_id = read.nextInt();
+		System.out.print("Please enter your unique customer id: ");
+		int custID = read.nextInt();
+		System.out.print("Please enter your payment amount: ");
+		double payAmt = read.nextDouble();
+		Statement st = connection.createStatement();
+		st.executeUpdate("SET TRANSACTION READ WRITE");
+		String selectQuery = ("SELECT * FROM CUSTOMERS WHERE CUST_ID = ? AND DS_ID = ?");
+		PreparedStatement ps = connection.prepareStatement(selectQuery);
+		ps.setLong(1, custID);
+		ps.setLong(2, ds_id);
+		ResultSet rs = ps.executeQuery();
+		if (rs == null) {
+			System.out.println("No matching entries found.");
+			return;
+		}
+		int numPay, wh_id;
+		double debtAmt;
+		String debt;
+		while (rs.next()) {
+			debt = rs.getString(14);
+			debtAmt = Double.parseDouble(debt);
+			numPay = rs.getInt(16);
+			wh_id = rs.getInt(1);
+
+			// get YTD_SALES_SUM for ds so that is may also be updated
+			String ytdSales = ("SELECT YTD_SALES_SUM FROM DISTSTATION WHERE WH_ID=? AND DS_ID=?");
+			PreparedStatement ytdPrep = connection.prepareStatement(ytdSales);
+			ytdPrep.setLong(1, wh_id);
+			ytdPrep.setLong(2, ds_id);
+			ResultSet ytdRS = ytdPrep.executeQuery();
+			while (ytdRS.next()) {
+				float ytdSalesSum = ytdRS.getFloat(1);
+
+				if (payAmt >= debtAmt) {
+					double extra = payAmt - debtAmt;
+					String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=? AND DS_ID=?");
+					PreparedStatement prep = connection
+							.prepareStatement(updateQuery);
+					prep.setLong(1, 0);
+					prep.setInt(2, custID);
+					prep.setInt(3, ds_id);
+					prep.executeUpdate();
+					prep.close();
+					prep = null;
+					System.out
+							.println("A payment of $"
+									+ debtAmt
+									+ " has been applied to your account and $"
+									+ extra
+									+ " has been refunded to you. Your current debt is $0.");
+					ytdSalesSum = ytdSalesSum + (float) debtAmt;
+					String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
+					PreparedStatement ytdp = connection
+							.prepareStatement(updateYTD);
+					ytdp.setFloat(1, ytdSalesSum);
+					ytdp.setLong(2, wh_id);
+					ytdp.setLong(3, ds_id);
+					ytdp.executeUpdate();
+
+				} else {
+					float newDebt = (float) debtAmt - (float) payAmt;
+					String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=? AND DS_ID=?");
+					PreparedStatement prep = connection
+							.prepareStatement(updateQuery);
+					prep.setFloat(1, newDebt);
+					prep.setInt(2, custID);
+					prep.setInt(3, ds_id);
+					prep.executeUpdate();
+					prep.close();
+					prep = null;
+					System.out
+							.println("A payment of $"
+									+ payAmt
+									+ " has been applied to your account and your current debt is $"
+									+ newDebt + ".");
+					ytdSalesSum = ytdSalesSum + (float) payAmt;
+					String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
+					PreparedStatement ytdp = connection
+							.prepareStatement(updateYTD);
+					ytdp.setFloat(1, ytdSalesSum);
+					ytdp.setLong(2, wh_id);
+					ytdp.setLong(3, ds_id);
+					ytdp.executeUpdate();
+					ytdp.close();
+					ytdp = null;
+					st.executeUpdate("COMMIT");
+					st.close();
+					st = null;
+				}
+			}
+			ytdRS.close();
+			ytdRS = null;
+		}
+		ps.close();
+		ps = null;
+	}
+	//question is very ambiguous and either way the metric is not very useful
+	//due to the ambiguity of the returned result
+	public static void checkStockLevels() throws SQLException {
+		Scanner read = new Scanner(System.in);
+		//this is for when there is more than 1 warehouse since ds_ids are not globally unique
+		System.out.print("Please enter your warehouse id: ");
+		int wh_id = read.nextInt();
+		System.out.print("Please enter distribution station id: ");
+		int ds_id = read.nextInt();
+		System.out.print("Please enter the stock threshold you wish to check: ");
+		int stockThreshold = read.nextInt();
+		
+		
+		Statement st = connection.createStatement();
+		st.executeQuery("SET TRANSACTION READ WRITE");
+		//return the number of unique items sold recently that are below stock threshold
+		String top20 = "SELECT COUNT(QUANTITY_AVAILABLE) FROM (SELECT QUANTITY_AVAILABLE FROM STOCK NATURAL JOIN (SELECT ITEM_ID FROM LINEITEMS NATURAL JOIN (SELECT ORDER_ID FROM (SELECT * FROM ORDERS WHERE DS_ID = ? AND WH_ID =? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <=20))) WHERE QUANTITY_AVAILABLE < ?";
+		PreparedStatement top20Orders = connection.prepareStatement(top20);
+		top20Orders.setLong(1, ds_id);
+		top20Orders.setLong(2, wh_id);
+		top20Orders.setLong(3, stockThreshold);
+		ResultSet rs = top20Orders.executeQuery();
+		while(rs.next()){
+			System.out.println("There are "+rs.getLong(1)+ " items in warehouse "+ wh_id+ " have a stock below "+ stockThreshold+".");
+		}
+		
+		top20Orders.close();
+		top20Orders = null;
+		
+		//return the sum of quantities purchased recently for items below stock threshold
+		String pQuantities = "SELECT QUANTITY FROM STOCK NATURAL JOIN (SELECT ITEM_ID, QUANTITY FROM LINEITEMS NATURAL JOIN (SELECT ORDER_ID FROM (SELECT * FROM ORDERS WHERE DS_ID = ? AND WH_ID =? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <=20)) WHERE QUANTITY_AVAILABLE < ?";
+		PreparedStatement qTop20 = connection.prepareStatement(pQuantities);
+		int sum = 0;
+		qTop20.setLong(1, ds_id);
+		qTop20.setLong(2, wh_id);
+		qTop20.setLong(3, stockThreshold);
+		ResultSet qRS = qTop20.executeQuery();
+		while (qRS.next()){
+			sum = sum + qRS.getInt(1);
+		}
+		
+		qRS.close();
+		qRS = null;
+		System.out.println(sum+ " items were purchase recently that are below the stock threshold, "+stockThreshold+ " in warehouse "+wh_id+".");
+		
+		st.executeQuery("COMMIT");
+		st.close();
+		st = null;
+	}
+
+	public static void deliverItems() throws SQLException {
+		Scanner read = new Scanner(System.in);
+		System.out.print("Please enter the id of your warehouse: ");
+		int wh_id = read.nextInt();
+		String incomplete = "Incomplete";
+		String completed = "Completed";
+		Statement st = connection.createStatement();
+		st.executeUpdate("SET TRANSACTION READ WRITE");
+		String selectQuery = ("SELECT DS_ID, CUST_ID, ORDER_ID, COMPLETED_FLAG FROM ORDERS WHERE WH_ID = ? AND COMPLETED_FLAG = ? ");
+		PreparedStatement ps = connection.prepareStatement(selectQuery);		
+		ps.setLong(1, wh_id);
+		ps.setString(2, incomplete);
+		ResultSet resultSet = ps.executeQuery();
+		ResultSetMetaData rsmd = resultSet.getMetaData();
+		int columnsNumber = rsmd.getColumnCount();
+		while (resultSet.next()) {
+			// update order
+			int custID = resultSet.getInt(2);
+			int ds_ID = resultSet.getInt(1);
+			int order_ID = resultSet.getInt(3);
+
+			String selectQuery2 = ("SELECT TOTAL_COST FROM LINEITEMS WHERE WH_ID = ? AND DS_ID = ? AND CUST_ID = ? AND ORDER_ID = ? ");
+			PreparedStatement ps2 = connection.prepareStatement(selectQuery2);		
+			ps2.setLong(1, wh_id);
+			ps2.setLong(2, ds_ID);
+			ps2.setLong(3, custID);
+			ps2.setLong(4, order_ID);
+			ResultSet resultSet2 = ps2.executeQuery();
+			resultSet2.next();
+			double totalCostLI = resultSet2.getDouble(1);
+			//updates lineitems with the date delivered
+			String updateLineItemsQuery = ("UPDATE LINEITEMS SET DATE_DELIVERED = ? WHERE CUST_ID=? AND DS_ID=? AND ORDER_ID = ?");
+			PreparedStatement updateLineItems = connection.prepareStatement(updateLineItemsQuery);
+			java.sql.Date dateDeliv = new java.sql.Date((new java.util.Date()).getTime());
+			updateLineItems.setDate(1, dateDeliv);
+			updateLineItems.setLong(2, custID);
+			updateLineItems.setLong(3, ds_ID);
+			updateLineItems.setLong(4, order_ID);
+			updateLineItems.executeUpdate();
+			updateLineItems.close();
+			updateLineItems = null;
+
+			//updates Customer Debt
+			String selectQuery3 = ("SELECT DEBT FROM CUSTOMERS WHERE WH_ID = ? AND DS_ID = ? AND CUST_ID = ?");
+			PreparedStatement ps3 = connection.prepareStatement(selectQuery3);	
+			ps3.setLong(1, wh_id);
+			ps3.setLong(2, ds_ID);
+			ps3.setLong(3, custID);
+			ResultSet resultSet3 = ps3.executeQuery();
+			resultSet3.next();
+			double currentDebt = resultSet3.getDouble(1);;
+			double totalCost = currentDebt + totalCostLI;
+			String updateCustomerQuery = ("UPDATE CUSTOMERS SET DEBT=? WHERE CUST_ID=? AND DS_ID=?");
+			PreparedStatement updateCustomers = connection.prepareStatement(updateCustomerQuery);
+			updateCustomers.setDouble(1, totalCost);
+			updateCustomers.setLong(2, custID);
+			updateCustomers.setLong(3, ds_ID);
+			updateCustomers.executeUpdate();
+			updateCustomers.close();
+			updateCustomers = null;
+
+			//Changes orders from incomplete to completed
+			String updateOrdersQuery = ("UPDATE ORDERS SET COMPLETED_FLAG=? WHERE CUST_ID=? AND DS_ID=? AND ORDER_ID = ?");
+			PreparedStatement updateOrders = connection.prepareStatement(updateOrdersQuery);
+			updateOrders.setString(1, completed);
+			updateOrders.setLong(2, custID);
+			updateOrders.setLong(3, ds_ID);
+			updateOrders.setLong(4, order_ID);
+			updateOrders.executeUpdate();
+			updateOrders.close();
+			updateOrders = null;
+
+
+			ps2.close();
+			ps2 = null;
+			ps3.close();
+			ps3 = null;
+		}
+		st.executeUpdate("COMMIT");
+		st.close();
+		st = null;
+		ps.close();
+		ps = null;
+	}
+	public static void checkOrderStatus() throws SQLException {
+		Scanner read = new Scanner(System.in);
+		System.out.print("Please enter the id of your distribution center: ");
+		int ds_id = read.nextInt();
+		System.out.print("Please enter your unique customer id: ");
+		int custID = read.nextInt();
+		Statement st = connection.createStatement();
+		st.executeUpdate("SET TRANSACTION READ WRITE");
+		String selectQuery = ("SELECT ITEM_ID, QUANTITY, TOTAL_COST, DATE_DELIVERED FROM LineItems WHERE CUST_ID = ? AND DS_ID = ? AND ORDER_ID = (SELECT ORDER_ID AS O_ID FROM (SELECT * FROM ORDERS WHERE CUST_ID = ? AND DS_ID = ? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <= 1) ORDER BY ITEM_ID ASC");
+		PreparedStatement ps = connection.prepareStatement(selectQuery);		
+		ps.setLong(1, custID);
+		ps.setLong(2, ds_id);
+		ps.setLong(3, custID);
+		ps.setLong(4, ds_id);
+		ResultSet resultSet = ps.executeQuery();
+		ResultSetMetaData rsmd = resultSet.getMetaData();
+		int columnsNumber = rsmd.getColumnCount();
+		System.out.print("Customer "+custID+" from Distribution Station "+ds_id+"'s last order contained:\n");
+		while (resultSet.next()) {
+		    for (int i = 1; i <= columnsNumber; i++) {
+		        if (i > 1) System.out.print(",       ");
+		        String columnValue = resultSet.getString(i);
+		        System.out.print(rsmd.getColumnName(i) + " " + columnValue);
+		    }
+		    System.out.println("");
+		}
+		st.executeUpdate("COMMIT");
+		st.close();
+		st = null;
+		ps.close();
+		ps = null;
+	}
+
+
 	//helper function to print stuff
 	public static void printstuff() throws SQLException {
 		Scanner read = new Scanner(System.in);
