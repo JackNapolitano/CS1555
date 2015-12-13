@@ -93,14 +93,231 @@ public class GroceryDeliveryDB {
 		}
 	}
 
+	/////////////////////////////////////////////////////
+	//////////////INITILIZATION FUNCTIONS////////////////	
+	/////////////////////////////////////////////////////
+	public static void resetDatabase() throws SQLException {
+		System.out.println("Reseting the database...");
+		String s = new String();
+		StringBuffer sb = new StringBuffer();
+
+		try {
+			FileReader f = new FileReader(new File("GroceryDB.sql"));
+
+			BufferedReader br = new BufferedReader(f);
+
+			while ((s = br.readLine()) != null) {
+				sb.append(s); // build the sql statement
+			}
+			br.close();
+
+			// split each request
+			String[] rqts = sb.toString().split(";");
+
+			if (connection != null) {
+				Statement st = connection.createStatement();
+
+				for (int i = 0; i < rqts.length; i++) {
+					if (!rqts[i].trim().equals("")) {
+						st.execute(rqts[i]);
+						// System.out.println(">>"+rqts[i]);
+					}
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("Error: " + e.toString());
+			System.out.println("Error: ");
+			e.printStackTrace();
+			System.out.println(sb.toString());
+		}
+	}
+	public static void genDB() throws SQLException {
+		System.out.println("Creating the database...");
+		String s = new String();
+		StringBuffer sb = new StringBuffer();
+
+		try {
+			FileReader f = new FileReader(new File("GroceryDB1.sql"));
+
+			BufferedReader br = new BufferedReader(f);
+
+			while ((s = br.readLine()) != null) {
+				sb.append(s); // build the sql statement
+			}
+			br.close();
+
+			// split each request
+			String[] rqts = sb.toString().split(";");
+
+			if (connection != null) 
+			{
+				Statement st = connection.createStatement();
+
+				for (int i = 0; i < rqts.length; i++) {
+					if (!rqts[i].trim().equals("")) {
+						st.execute(rqts[i]);
+						// System.out.println(">>"+rqts[i]);
+					}
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("Error: " + e.toString());
+			System.out.println("Error: ");
+			e.printStackTrace();
+			System.out.println(sb.toString());
+		}
+	}
+	public static void dropTables() throws SQLException {
+		String selectQuery = ("DROP TABLE Stock");
+		PreparedStatement ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+		selectQuery = ("DROP TABLE LineItems");
+		ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+		selectQuery = ("DROP TABLE Items");
+		ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+		selectQuery = ("DROP TABLE Orders");
+		ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+		selectQuery = ("DROP TABLE Customers");
+		ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+		selectQuery = ("DROP TABLE DistStation");
+		ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+		selectQuery = ("DROP TABLE Warehouse");
+		ps = connection.prepareStatement(selectQuery);
+		try {
+			ps.executeQuery();
+		} catch (SQLException e) {
+		}
+		ps.close();
+		ps = null;
+	}
+	//THIS IS THE FUNCTION WHERE YOU SET QUANTITES OF DATA GENERATION
+	public static void GenData() {
+		// create tables from .sql file
+		try {
+			resetDatabase();
+			System.out.println("Creating the database...");
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		// gen the data for the db
+		try {
+			// 1 warehouse
+			// 8 distribution stations per warehouse
+			// 100 customers per distribution station
+			// 1000 items
+			// 1000 stock listings per warehouse
+			// Between 1 and 50 orders per customer
+			// Between 3 and 10 line items per order
+
+			System.out.println("Generating data for the database... (takes a few minutes)");
+			System.out.println("Generating items...");
+			GenItemData(1000);// 1000 unique grocery items
+			System.out.println("Generating warehouse...");
+			GenWarehouseData(1); // number of warehouses
+			System.out.println("Generating stock entries...");
+			GenStockData(1000, 1);
+			System.out.println("Generating distribution stations...");
+			GenDistStationData(8);// 8 DS per HW
+			System.out.println("Generating customers...");
+			GenCustomerData(10);// 100 customers per DS
+			System.out.println("Generating orders and line items...");
+			GenOrderData(50);// between 1-50 orders per cust3
+
+			System.out.println("Updating data to reflect sales... (sales sum, num deliveries, etc..)");
+			//DATA CONSISTENCY BELOW
+			//updateCustData();
+			//updateDSData();
+			//updateWHData();
+			//updateStockData();
+
+
+
+			//data consistancy is done without triggers because I hate them
+			//in each transaction, data consistencey is manually done.
+			//triggers suck.
+			//DATA CONSISTENCY NOTES
+			
+			//NEW ORDER TRANSACTION MUST UPDATE:
+				//Customer Debt -done
+				//Stock Quantities -done
+				//Stock.Num_orders -done
+
+			//MAKE PAYMENT TRANSACTION MUST UPDATE:
+				//CUSTOMER.DEBT -done
+				//CUSTOMER.YTD_PURCHASE_TOTAL -done
+				//CUSTOMER.NUM_PAYMENTS -done
+				//CUSTOMER.DELIVERIES?? we wont do this here, we will do it deliver items
+				//DISTSTATION YTD-SALES-SUM -done
+				//WAREHOUSE YTD-SALES-SUM -done
+
+			//DELIVER EVERYTHING TRANSACTION MUST UPDATE:
+				//Customer Debt -done
+				//CUSTOMER.YTD_PURCHASE_TOTAL -done
+				//CUSTOMER.NUM_PAYMENTS -done
+				//CUSTOMER.NUM_DELIVERIES -done
+				//DISTSTATION YTD-SALES-SUM -done
+				//WAREHOUSE YTD-SALES-SUM -done
+				//LINE ITEM DATE DELIVERED -done
+				//ORDER  COMEPLETED FLAG -done
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+
 
 	/////////////////////////////////////////////////////
 	//////////////////TRANSACTIONS///////////////////////	
 	/////////////////////////////////////////////////////
 	//TX1
-	public static void newOrder() throws SQLException {
+	public static void newOrder() throws SQLException 
+	{
 		// read in all required information
 		Scanner read = new Scanner(System.in);
+		System.out.print("Please enter your warehouse id: ");
+		int wh_id = 0;
+		try {
+			wh_id = Integer.parseInt(read.nextLine());
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}
 		System.out.print("Please enter your distribution station id: ");
 		int ds_ID = 0;
 		try {
@@ -155,22 +372,27 @@ public class GroceryDeliveryDB {
 					.println("The total number of items and the sum of all quantities must match. Please try the order again.");
 			return;
 		}
+
+		/////////////////////////////////
+		///START OF ACTUAL TRANSACTION///
+		/////////////////////////////////
 		Statement st = connection.createStatement();
 		st.executeQuery("SET TRANSACTION READ WRITE");
 		// get WH_ID from Customers table
-		String whQuery = "SELECT * FROM CUSTOMERS WHERE CUST_ID = ? AND DS_ID = ?";
+		String whQuery = "SELECT * FROM CUSTOMERS WHERE CUST_ID = ? AND DS_ID = ? AND WH_ID = ?";
 		PreparedStatement getWHID = connection.prepareStatement(whQuery);
 		getWHID.setLong(1, custID);
 		getWHID.setLong(2, ds_ID);
+		getWHID.setLong(3, wh_id);
 		ResultSet whRS = getWHID.executeQuery();
 		while (whRS.next()) {
-			int wh_ID = whRS.getInt(1);
 			// get last order ID for customer and increment it by 1
-			String ordIDQuery = "SELECT MAX(ORDER_ID) FROM ORDERS WHERE CUST_ID=? AND DS_ID=?";
+			String ordIDQuery = "SELECT MAX(ORDER_ID) FROM ORDERS WHERE CUST_ID=? AND DS_ID=? AND WH_ID = ?";
 			PreparedStatement maxOrdID = connection
 					.prepareStatement(ordIDQuery);
 			maxOrdID.setLong(1, custID);
 			maxOrdID.setLong(2, ds_ID);
+			maxOrdID.setLong(3, wh_id);
 			ResultSet maxOrd = maxOrdID.executeQuery();
 			while (maxOrd.next()) {
 				int maxOrderID = maxOrd.getInt(1);
@@ -180,7 +402,7 @@ public class GroceryDeliveryDB {
 				String insertOrder = "INSERT INTO Orders VALUES (?,?,?,?,?,?,?)";
 				PreparedStatement insNewOrder = connection
 						.prepareStatement(insertOrder);
-				insNewOrder.setLong(1, wh_ID);
+				insNewOrder.setLong(1, wh_id);
 				insNewOrder.setLong(2, ds_ID);
 				insNewOrder.setLong(3, custID);
 				insNewOrder.setLong(4, newOrderID);
@@ -194,20 +416,17 @@ public class GroceryDeliveryDB {
 				// create line item entries for order
 				for (int i = 0; i < iIds.size(); i++) {
 					String liInsert = "INSERT INTO LineItems VALUES (?,?,?,?,?,?,?,?,?)";
-					PreparedStatement insLI = connection
-							.prepareStatement(liInsert);
-					insLI.setLong(1, wh_ID);
+					PreparedStatement insLI = connection.prepareStatement(liInsert);
+					insLI.setLong(1, wh_id);
 					insLI.setLong(2, ds_ID);
 					insLI.setLong(3, custID);
 					insLI.setLong(4, newOrderID);
 					insLI.setLong(5, i);
 					insLI.setLong(6, iIds.get(i));
 					insLI.setLong(7, iQuantities.get(i));
-
 					// calculate total cost
 					String priceQuery = "SELECT PRICE FROM ITEMS WHERE ITEM_ID =?";
-					PreparedStatement pricePS = connection
-							.prepareStatement(priceQuery);
+					PreparedStatement pricePS = connection.prepareStatement(priceQuery);
 					pricePS.setLong(1, iIds.get(i));
 					ResultSet priceRS = pricePS.executeQuery();
 					double price = 0;
@@ -228,6 +447,25 @@ public class GroceryDeliveryDB {
 					insLI.executeUpdate();
 					insLI.close();
 					insLI = null;
+					//DATA CONSISTANCY CUSTOMER DEBT
+					String updateCustomerDebt = "UPDATE CUSTOMERS set debt = debt + ? WHERE WH_ID = ? AND DS_ID = ? AND CUST_ID = ?";
+					PreparedStatement updateCust = connection.prepareStatement(updateCustomerDebt);
+					updateCust.setDouble(1, totalPrice);
+					updateCust.setLong(2, wh_id);
+					updateCust.setLong(3, ds_ID);
+					updateCust.setLong(4, custID);
+					updateCust.executeUpdate();
+					updateCust.close();
+					updateCust = null;
+					//DATA CONSISTANCY STOCK
+					String updateStock = "UPDATE STOCK set NUM_ORDERS = NUM_ORDERS + 1, QUANTITY_AVAILABLE = QUANTITY_AVAILABLE -  ?, quantity_sold = quantity_sold + ? WHERE ITEM_ID = ?";
+					PreparedStatement updateStockPS = connection.prepareStatement(updateStock);
+					updateStockPS.setLong(1, iQuantities.get(i));
+					updateStockPS.setLong(2, iQuantities.get(i));
+					updateStockPS.setLong(3, iIds.get(i));
+					updateStockPS.executeUpdate();
+					updateStockPS.close();
+					updateStockPS = null;
 				}
 				insNewOrder.close();
 				insNewOrder = null;
@@ -242,8 +480,11 @@ public class GroceryDeliveryDB {
 		st = null;
 	}
 	//TX2
-	public static void makePayment() throws SQLException {
+	public static void makePayment() throws SQLException 
+	{
 		Scanner read = new Scanner(System.in);
+		System.out.print("Please enter the id of your warehouse: ");
+		int wh_id = read.nextInt();
 		System.out.print("Please enter the id of your distribution center: ");
 		int ds_id = read.nextInt();
 		System.out.print("Please enter your unique customer id: ");
@@ -254,6 +495,7 @@ public class GroceryDeliveryDB {
 		st.executeUpdate("SET TRANSACTION READ WRITE");
 		String selectQuery = ("SELECT * FROM CUSTOMERS WHERE CUST_ID = ? AND DS_ID = ?");
 		PreparedStatement ps = connection.prepareStatement(selectQuery);
+
 		ps.setLong(1, custID);
 		ps.setLong(2, ds_id);
 		ResultSet rs = ps.executeQuery();
@@ -261,14 +503,13 @@ public class GroceryDeliveryDB {
 			System.out.println("No matching entries found.");
 			return;
 		}
-		int numPay, wh_id;
+		int numPay;
 		double debtAmt;
 		String debt;
 		while (rs.next()) {
 			debt = rs.getString(14);
 			debtAmt = Double.parseDouble(debt);
 			numPay = rs.getInt(16);
-			wh_id = rs.getInt(1);
 
 			// get YTD_SALES_SUM for ds so that is may also be updated
 			String ytdSales = ("SELECT YTD_SALES_SUM FROM DISTSTATION WHERE WH_ID=? AND DS_ID=?");
@@ -276,64 +517,78 @@ public class GroceryDeliveryDB {
 			ytdPrep.setLong(1, wh_id);
 			ytdPrep.setLong(2, ds_id);
 			ResultSet ytdRS = ytdPrep.executeQuery();
-			while (ytdRS.next()) {
+			while (ytdRS.next()) 
+			{
 				float ytdSalesSum = ytdRS.getFloat(1);
 
 				if (payAmt >= debtAmt) {
 					double extra = payAmt - debtAmt;
-					String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=? AND DS_ID=?");
-					PreparedStatement prep = connection
-							.prepareStatement(updateQuery);
+					String updateQuery = ("UPDATE CUSTOMERS SET NUM_PAYMENTS = NUM_PAYMENTS + 1, debt = ?, YTD_PURCHASE_TOTAL = YTD_PURCHASE_TOTAL + ? WHERE CUST_ID=? AND DS_ID=?");
+					PreparedStatement prep = connection.prepareStatement(updateQuery);
 					prep.setLong(1, 0);
-					prep.setInt(2, custID);
-					prep.setInt(3, ds_id);
+					prep.setDouble(2, debtAmt);
+					prep.setInt(3, custID);
+					prep.setInt(4, ds_id);
 					prep.executeUpdate();
 					prep.close();
 					prep = null;
-					System.out
-							.println("A payment of $"
+					System.out.println("A payment of $"
 									+ debtAmt
 									+ " has been applied to your account and $"
 									+ extra
 									+ " has been refunded to you. Your current debt is $0.");
 					ytdSalesSum = ytdSalesSum + (float) debtAmt;
+					
+					//DATA CONSISTANCY FOR WAREHOUSE AND DS YTD SALES SUM
 					String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
-					PreparedStatement ytdp = connection
-							.prepareStatement(updateYTD);
-					ytdp.setFloat(1, ytdSalesSum);
-					ytdp.setLong(2, wh_id);
-					ytdp.setLong(3, ds_id);
-					ytdp.executeUpdate();
-
-				} else {
-					float newDebt = (float) debtAmt - (float) payAmt;
-					String updateQuery = ("UPDATE CUSTOMERS SET debt=? WHERE CUST_ID=? AND DS_ID=?");
-					PreparedStatement prep = connection
-							.prepareStatement(updateQuery);
-					prep.setFloat(1, newDebt);
-					prep.setInt(2, custID);
-					prep.setInt(3, ds_id);
-					prep.executeUpdate();
-					prep.close();
-					prep = null;
-					System.out
-							.println("A payment of $"
-									+ payAmt
-									+ " has been applied to your account and your current debt is $"
-									+ newDebt + ".");
-					ytdSalesSum = ytdSalesSum + (float) payAmt;
-					String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
-					PreparedStatement ytdp = connection
-							.prepareStatement(updateYTD);
+					PreparedStatement ytdp = connection.prepareStatement(updateYTD);
 					ytdp.setFloat(1, ytdSalesSum);
 					ytdp.setLong(2, wh_id);
 					ytdp.setLong(3, ds_id);
 					ytdp.executeUpdate();
 					ytdp.close();
 					ytdp = null;
-					st.executeUpdate("COMMIT");
-					st.close();
-					st = null;
+					String updateYTD2 = ("UPDATE WAREHOUSE SET YTD_SALES_SUM = YTD_SALES_SUM + ? WHERE WH_ID=?");
+					PreparedStatement ytdps = connection.prepareStatement(updateYTD2);
+					ytdps.setFloat(1, (float)debtAmt);
+					ytdps.setLong(2, wh_id);
+					ytdps.executeUpdate();
+					ytdps.close();
+					ytdps = null;
+				} 
+				else {
+					float newDebt = (float) debtAmt - (float) payAmt;
+					String updateQuery = ("UPDATE CUSTOMERS SET NUM_PAYMENTS = NUM_PAYMENTS + 1, debt=?, YTD_PURCHASE_TOTAL = YTD_PURCHASE_TOTAL + ?  WHERE CUST_ID=? AND DS_ID=?");
+					PreparedStatement prep = connection
+							.prepareStatement(updateQuery);
+					prep.setFloat(1, newDebt);
+					prep.setDouble(2, payAmt);
+					prep.setInt(3, custID);
+					prep.setInt(4, ds_id);
+					prep.executeUpdate();
+					prep.close();
+					prep = null;
+					System.out.println("A payment of $"
+									+ payAmt
+									+ " has been applied to your account and your current debt is $"
+									+ newDebt + ".");
+					ytdSalesSum = ytdSalesSum + (float) payAmt;
+					//DATA CONSISTANCY FOR WAREHOUSE AND DS YTD SALES SUM
+					String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = ? WHERE WH_ID=? AND DS_ID=?");
+					PreparedStatement ytdp = connection.prepareStatement(updateYTD);
+					ytdp.setFloat(1, ytdSalesSum);
+					ytdp.setLong(2, wh_id);
+					ytdp.setLong(3, ds_id);
+					ytdp.executeUpdate();
+					ytdp.close();
+					ytdp = null;
+					String updateYTD2 = ("UPDATE WAREHOUSE SET YTD_SALES_SUM = YTD_SALES_SUM + ? WHERE WH_ID=?");
+					PreparedStatement ytdps = connection.prepareStatement(updateYTD2);
+					ytdps.setDouble(1, payAmt);
+					ytdps.setLong(2, wh_id);
+					ytdps.executeUpdate();
+					ytdps.close();
+					ytdps = null;
 				}
 			}
 			ytdRS.close();
@@ -341,6 +596,9 @@ public class GroceryDeliveryDB {
 		}
 		ps.close();
 		ps = null;
+		st.executeUpdate("COMMIT");
+		st.close();
+		st = null;
 	}
 	//question is very ambiguous and either way the metric is not very useful
 	//due to the ambiguity of the returned result
@@ -408,7 +666,8 @@ public class GroceryDeliveryDB {
 		ResultSet resultSet = ps.executeQuery();
 		ResultSetMetaData rsmd = resultSet.getMetaData();
 		int columnsNumber = rsmd.getColumnCount();
-		while (resultSet.next()) {
+		while (resultSet.next())
+		{
 			// update order
 			int custID = resultSet.getInt(2);
 			int ds_ID = resultSet.getInt(1);
@@ -424,18 +683,19 @@ public class GroceryDeliveryDB {
 			resultSet2.next();
 			double totalCostLI = resultSet2.getDouble(1);
 			//updates lineitems with the date delivered
-			String updateLineItemsQuery = ("UPDATE LINEITEMS SET DATE_DELIVERED = ? WHERE CUST_ID=? AND DS_ID=? AND ORDER_ID = ?");
+			String updateLineItemsQuery = ("UPDATE LINEITEMS SET DATE_DELIVERED = ? WHERE CUST_ID = ? AND DS_ID = ? AND ORDER_ID = ? AND WH_ID = ?");
 			PreparedStatement updateLineItems = connection.prepareStatement(updateLineItemsQuery);
 			java.sql.Date dateDeliv = new java.sql.Date((new java.util.Date()).getTime());
 			updateLineItems.setDate(1, dateDeliv);
 			updateLineItems.setLong(2, custID);
 			updateLineItems.setLong(3, ds_ID);
 			updateLineItems.setLong(4, order_ID);
+			updateLineItems.setLong(5, wh_id);
 			updateLineItems.executeUpdate();
 			updateLineItems.close();
 			updateLineItems = null;
 
-			//updates Customer Debt
+			//get debt for later use
 			String selectQuery3 = ("SELECT DEBT FROM CUSTOMERS WHERE WH_ID = ? AND DS_ID = ? AND CUST_ID = ?");
 			PreparedStatement ps3 = connection.prepareStatement(selectQuery3);	
 			ps3.setLong(1, wh_id);
@@ -443,39 +703,59 @@ public class GroceryDeliveryDB {
 			ps3.setLong(3, custID);
 			ResultSet resultSet3 = ps3.executeQuery();
 			resultSet3.next();
-			double currentDebt = resultSet3.getDouble(1);;
-			double totalCost = currentDebt + totalCostLI;
-			String updateCustomerQuery = ("UPDATE CUSTOMERS SET DEBT=? WHERE CUST_ID=? AND DS_ID=?");
+			double currentDebt = resultSet3.getDouble(1);
+
+
+			//CUSTOMER DATA CONSISTANCY
+			String updateCustomerQuery = ("UPDATE CUSTOMERS SET DEBT = 0, YTD_PURCHASE_TOTAL = YTD_PURCHASE_TOTAL + DEBT, NUM_PAYMENTS = NUM_PAYMENTS + 1, NUM_DELIVERIES = NUM_DELIVERIES + 1  WHERE CUST_ID = ? AND DS_ID = ? AND WH_ID = ?");
 			PreparedStatement updateCustomers = connection.prepareStatement(updateCustomerQuery);
-			updateCustomers.setDouble(1, totalCost);
-			updateCustomers.setLong(2, custID);
-			updateCustomers.setLong(3, ds_ID);
+			updateCustomers.setLong(1, custID);
+			updateCustomers.setLong(2, ds_ID);
+			updateCustomers.setLong(3, wh_id);
 			updateCustomers.executeUpdate();
 			updateCustomers.close();
 			updateCustomers = null;
 
 			//Changes orders from incomplete to completed
-			String updateOrdersQuery = ("UPDATE ORDERS SET COMPLETED_FLAG=? WHERE CUST_ID=? AND DS_ID=? AND ORDER_ID = ?");
+			String updateOrdersQuery = ("UPDATE ORDERS SET COMPLETED_FLAG=? WHERE CUST_ID=? AND DS_ID=? AND ORDER_ID = ?  AND WH_ID = ?");
 			PreparedStatement updateOrders = connection.prepareStatement(updateOrdersQuery);
 			updateOrders.setString(1, completed);
 			updateOrders.setLong(2, custID);
 			updateOrders.setLong(3, ds_ID);
 			updateOrders.setLong(4, order_ID);
+			updateOrders.setLong(5, wh_id);
 			updateOrders.executeUpdate();
 			updateOrders.close();
 			updateOrders = null;
 
+			//DATA CONSISTANCY FOR WAREHOUSE AND DS YTD SALES SUM
+			String updateYTD = ("UPDATE DISTSTATION SET YTD_SALES_SUM = YTD_SALES_SUM + ? WHERE WH_ID=? AND DS_ID=?");
+			PreparedStatement ytdp = connection.prepareStatement(updateYTD);
+			ytdp.setDouble(1, currentDebt);
+			ytdp.setLong(2, wh_id);
+			ytdp.setLong(3, ds_ID);
+			ytdp.executeUpdate();
+			ytdp.close();
+			ytdp = null;
+			String updateYTD2 = ("UPDATE WAREHOUSE SET YTD_SALES_SUM = YTD_SALES_SUM + ? WHERE WH_ID=?");
+			PreparedStatement ytdps = connection.prepareStatement(updateYTD2);
+			ytdps.setDouble(1, currentDebt);
+			ytdps.setLong(2, wh_id);
+			ytdps.executeUpdate();
+			ytdps.close();
+			ytdps = null;
 
 			ps2.close();
 			ps2 = null;
 			ps3.close();
 			ps3 = null;
 		}
+		ps.close();
+		ps = null;
+
 		st.executeUpdate("COMMIT");
 		st.close();
 		st = null;
-		ps.close();
-		ps = null;
 	}
 	//TX5
 	public static void checkOrderStatus() throws SQLException {
@@ -514,127 +794,6 @@ public class GroceryDeliveryDB {
 	//////////////////END TRANSACTIONS///////////////////	
 	/////////////////////////////////////////////////////
 
-
-
-	/////////////////////////////////////////////////////
-	//////////////////INITILIZATION FUNCTIONS////////////	
-	/////////////////////////////////////////////////////
-	public static void dropTables() throws SQLException {
-		String selectQuery = ("DROP TABLE Stock");
-		PreparedStatement ps = connection.prepareStatement(selectQuery);
-		try {
-			ps.executeQuery();
-		} catch (SQLException e) {
-		}
-		ps.close();
-		ps = null;
-		selectQuery = ("DROP TABLE LineItems");
-		ps = connection.prepareStatement(selectQuery);
-		try {
-			ps.executeQuery();
-		} catch (SQLException e) {
-		}
-		ps.close();
-		ps = null;
-		selectQuery = ("DROP TABLE Items");
-		ps = connection.prepareStatement(selectQuery);
-		try {
-			ps.executeQuery();
-		} catch (SQLException e) {
-		}
-		ps.close();
-		ps = null;
-		selectQuery = ("DROP TABLE Orders");
-		ps = connection.prepareStatement(selectQuery);
-		try {
-			ps.executeQuery();
-		} catch (SQLException e) {
-		}
-		ps.close();
-		ps = null;
-		selectQuery = ("DROP TABLE Customers");
-		ps = connection.prepareStatement(selectQuery);
-		try {
-			ps.executeQuery();
-		} catch (SQLException e) {
-		}
-		ps.close();
-		ps = null;
-		selectQuery = ("DROP TABLE DistStation");
-		ps = connection.prepareStatement(selectQuery);
-		try {
-			ps.executeQuery();
-		} catch (SQLException e) {
-		}
-		ps.close();
-		ps = null;
-		selectQuery = ("DROP TABLE Warehouse");
-		ps = connection.prepareStatement(selectQuery);
-		try {
-			ps.executeQuery();
-		} catch (SQLException e) {
-		}
-		ps.close();
-		ps = null;
-	}
-	public static void GenData() {
-		// create tables from .sql file
-		try {
-			resetDatabase();
-			System.out.println("Creating the database...");
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		// gen the data for the db
-		try {
-			// 1 warehouse
-			// 8 distribution stations per warehouse
-			// 100 customers per distribution station
-			// 1000 items
-			// 1000 stock listings per warehouse
-			// Between 1 and 50 orders per customer
-			// Between 3 and 10 line items per order
-			System.out.println("Generating data for the database... (takes a few minutes)");
-			System.out.println("Generating items...");
-			GenItemData(1000);// 1000 unique grocery items
-			System.out.println("Generating warehouse...");
-			GenWarehouseData(1); // number of warehouses
-			System.out.println("Generating stock entries...");
-			GenStockData(1000, 1);
-			System.out.println("Generating distribution stations...");
-			GenDistStationData(8);// 8 DS per HW
-			System.out.println("Generating customers...");
-			GenCustomerData(100);// 100 customers per DS
-			System.out.println("Generating orders and line items...");
-			GenOrderData(50);// between 1-50 orders per cust3
-
-			System.out.println("Updating data to reflect sales... (sales sum, num deliveries, etc..)");
-			//DATA CONSISTENCY BELOW
-			updateCustData();
-			updateDSData();
-			updateWHData();
-			//updateStockData();
-
-			//data consistancy is done through the functions above up until this point.
-			//to keep data consistent here on out, we will use triggers
-			// try {
-			// 	if (connection != null) 
-			// 	{
-			// 		Statement st = connection.createStatement();
-			// 		st.execute("CREATE OR REPLACE TRIGGER ytdSalesUpdate AFTER INSERT OR UPDATE ON Customers FOR EACH ROW BEGIN update DistStation set YTD_SALES_SUM = (SELECT SUM(YTD_PURCHASE_TOTAL) FROM Customers WHERE DS_ID = :new.DS_ID); update Warehouse set YTD_SALES_SUM = (SELECT SUM(YTD_PURCHASE_TOTAL) FROM Customers WHERE WH_ID = :new.WH_ID); end;");
-			// 		st.close();
-			// 	}
-			// } catch (Exception e) {
-			// 	System.out.println("Error: " + e.toString());
-			// 	System.out.println("Error: ");
-			// 	e.printStackTrace();
-			// }
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
 
 	/////////////////////////////////////////////////////
 	//////////////DATA GENERATION FUNCTIONS//////////////	
@@ -1431,103 +1590,63 @@ public class GroceryDeliveryDB {
 						rs3.getString(6), rs3.getLong(7));
 			}
 	}
-	public static void resetDatabase() throws SQLException {
-		System.out.println("Reseting the database...");
-		String s = new String();
-		StringBuffer sb = new StringBuffer();
-
-		try {
-			FileReader f = new FileReader(new File("GroceryDB.sql"));
-
-			BufferedReader br = new BufferedReader(f);
-
-			while ((s = br.readLine()) != null) {
-				sb.append(s); // build the sql statement
-			}
-			br.close();
-
-			// split each request
-			String[] rqts = sb.toString().split(";");
-
-			if (connection != null) {
-				Statement st = connection.createStatement();
-
-				for (int i = 0; i < rqts.length; i++) {
-					if (!rqts[i].trim().equals("")) {
-						st.execute(rqts[i]);
-						// System.out.println(">>"+rqts[i]);
-					}
-				}
-			}
-		} catch (Exception e) {
-			System.out.println("Error: " + e.toString());
-			System.out.println("Error: ");
-			e.printStackTrace();
-			System.out.println(sb.toString());
-		}
-	}
-	public static void genDB() throws SQLException {
-		System.out.println("Creating the database...");
-		String s = new String();
-		StringBuffer sb = new StringBuffer();
-
-		try {
-			FileReader f = new FileReader(new File("GroceryDB1.sql"));
-
-			BufferedReader br = new BufferedReader(f);
-
-			while ((s = br.readLine()) != null) {
-				sb.append(s); // build the sql statement
-			}
-			br.close();
-
-			// split each request
-			String[] rqts = sb.toString().split(";");
-
-			if (connection != null) 
-			{
-				Statement st = connection.createStatement();
-
-				for (int i = 0; i < rqts.length; i++) {
-					if (!rqts[i].trim().equals("")) {
-						st.execute(rqts[i]);
-						// System.out.println(">>"+rqts[i]);
-					}
-				}
-			}
-		} catch (Exception e) {
-			System.out.println("Error: " + e.toString());
-			System.out.println("Error: ");
-			e.printStackTrace();
-			System.out.println(sb.toString());
-		}
-	}
 	//helper function to print stuff
 	public static void printstuff() throws SQLException {
-		Scanner read = new Scanner(System.in);
-		System.out.print("Please enter the id of your warehouse: ");
-		int wh_id = read.nextInt();
 		String completed = "Incomplete";
 		Statement st = connection.createStatement();
 		st.executeUpdate("SET TRANSACTION READ WRITE");
-		String selectQuery = ("SELECT * FROM STOCK WHERE WH_ID = ?");
+
+		//String selectQuery = ("SELECT * FROM LINEITEMS WHERE DS_ID = 1 AND WH_ID = 0 AND CUST_ID = 9");
+		//String selectQuery = ("SELECT NUM_DELIVERIES, NUM_PAYMENTS, debt, YTD_PURCHASE_TOTAL FROM Customers WHERE WH_ID = 0 AND DS_ID = 1 AND CUST_ID = 1");
+		//String selectQuery = ("SELECT * FROM STOCK WHERE WH_ID = 0");
+		String selectQuery = ("SELECT YTD_SALES_SUM FROM WAREHOUSE WHERE WH_ID = 0");
 		PreparedStatement ps = connection.prepareStatement(selectQuery);		
-		ps.setLong(1, wh_id);
 		ResultSet resultSet = ps.executeQuery();
 		ResultSetMetaData rsmd = resultSet.getMetaData();
 		int columnsNumber = rsmd.getColumnCount();
 		while (resultSet.next()) {
-		    for (int i = 1; i < columnsNumber; i++) {
+		    for (int i = 1; i < columnsNumber+1; i++) {
 		        if (i > 1) System.out.print(",       ");
 		        String columnValue = resultSet.getString(i);
 		        System.out.print(rsmd.getColumnName(i) + " " + columnValue);
 		    }
 		    System.out.println("");
 		}
+		ps.close();
+		ps = null;
+
+		selectQuery = ("SELECT YTD_SALES_SUM FROM DISTSTATION WHERE WH_ID = 0 AND DS_ID = 1");
+		ps = connection.prepareStatement(selectQuery);		
+		resultSet = ps.executeQuery();
+		rsmd = resultSet.getMetaData();
+		columnsNumber = rsmd.getColumnCount();
+		while (resultSet.next()) {
+		    for (int i = 1; i < columnsNumber+1; i++) {
+		        if (i > 1) System.out.print(",       ");
+		        String columnValue = resultSet.getString(i);
+		        System.out.print(rsmd.getColumnName(i) + " " + columnValue);
+		    }
+		    System.out.println("");
+		}
+		ps.close();
+		ps = null;
+		selectQuery = ("SELECT debt FROM customers WHERE WH_ID = 0 AND DS_ID = 1 AND cust_ID = 1");
+		ps = connection.prepareStatement(selectQuery);		
+		resultSet = ps.executeQuery();
+		rsmd = resultSet.getMetaData();
+		columnsNumber = rsmd.getColumnCount();
+		while (resultSet.next()) {
+		    for (int i = 1; i < columnsNumber+1; i++) {
+		        if (i > 1) System.out.print(",       ");
+		        String columnValue = resultSet.getString(i);
+		        System.out.print(rsmd.getColumnName(i) + " " + columnValue);
+		    }
+		    System.out.println("");
+		}
+		ps.close();
+		ps = null;
 		st.executeUpdate("COMMIT");
 		st.close();
 		st = null;
-		ps.close();
-		ps = null;
 	}
 }
