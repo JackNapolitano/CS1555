@@ -206,7 +206,7 @@ public class GroceryDeliveryDB {
 			// Between 1 and 50 orders per customer
 			// Between 3 and 10 line items per order
 
-			System.out.println("Generating data for the database... (takes a few minutes)");
+			System.out.println("Generating data for the database... (takes about 10 minutes)");
 			System.out.println("Generating items...");
 			GenItemData(1000);// 1000 unique grocery items
 			System.out.println("\tDone.");
@@ -220,7 +220,7 @@ public class GroceryDeliveryDB {
 			GenDistStationData(8);// 8 DS per HW
 			System.out.println("\tDone.");
 			System.out.println("Generating customers...");
-			GenCustomerData(10);// 100 customers per DS
+			GenCustomerData(100);// 100 customers per DS
 			System.out.println("\tDone.");
 			System.out.println("Generating orders and line items...");
 			GenOrderData(50);// between 1-50 orders per cust
@@ -597,21 +597,23 @@ public class GroceryDeliveryDB {
 		top20Orders = null;
 		
 		//return the sum of quantities purchased recently for items below stock threshold
-		String pQuantities = "SELECT QUANTITY FROM STOCK NATURAL JOIN (SELECT ITEM_ID, QUANTITY FROM LINEITEMS NATURAL JOIN (SELECT ORDER_ID FROM (SELECT * FROM ORDERS WHERE DS_ID = ? AND WH_ID =? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <=20)) WHERE QUANTITY_AVAILABLE < ?";
+		String pQuantities = "SELECT SUM(QUANTITY) FROM STOCK NATURAL JOIN (SELECT ITEM_ID, QUANTITY FROM LINEITEMS NATURAL JOIN (SELECT ORDER_ID FROM (SELECT * FROM ORDERS WHERE DS_ID = ? AND WH_ID =? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <=20)) WHERE QUANTITY_AVAILABLE < ?";
 		PreparedStatement qTop20 = connection.prepareStatement(pQuantities);
 		int sum = 0;
 		qTop20.setLong(1, ds_id);
 		qTop20.setLong(2, wh_id);
 		qTop20.setLong(3, stockThreshold);
 		ResultSet qRS = qTop20.executeQuery();
-		while (qRS.next()){
-			sum = sum + qRS.getInt(1);
+		// while (qRS.next()){
+		// 	sum = sum + qRS.getInt(1);
+		// }
+		// System.out.println(sum+ " items were purchase recently that are below the stock threshold, "+stockThreshold+ " in warehouse "+wh_id+".");
+		while (qRS.next()) 
+		{
+			System.out.println(qRS.getInt(1) + " items were purchase recently that are below the stock threshold, "+stockThreshold+ " in warehouse "+wh_id+".");    
 		}
-		
 		qRS.close();
 		qRS = null;
-		System.out.println(sum+ " items were purchase recently that are below the stock threshold, "+stockThreshold+ " in warehouse "+wh_id+".");
-		
 		st.executeQuery("COMMIT");
 		st.close();
 		st = null;
@@ -1543,7 +1545,8 @@ public class GroceryDeliveryDB {
 		//String selectQuery = ("SELECT * FROM LINEITEMS WHERE DS_ID = 1 AND WH_ID = 0 AND CUST_ID = 9");
 		//String selectQuery = ("SELECT NUM_DELIVERIES, NUM_PAYMENTS, debt, YTD_PURCHASE_TOTAL FROM Customers WHERE WH_ID = 0 AND DS_ID = 1 AND CUST_ID = 1");
 		//String selectQuery = ("SELECT * FROM STOCK WHERE WH_ID = 0");
-		String selectQuery = ("SELECT * FROM STOCK WHERE WH_ID = 0 ORDER BY ITEM_ID ASC");
+
+		String selectQuery = ("SELECT DEBT FROM CUSTOMERs WHERE DEBT = 0");
 		PreparedStatement ps = connection.prepareStatement(selectQuery);		
 		ResultSet resultSet = ps.executeQuery();
 		ResultSetMetaData rsmd = resultSet.getMetaData();

@@ -15,6 +15,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Random;
+
 
 public class GroceryDBDriver extends Thread {
 	private static int numThreads = 15; // 3 threads per tx
@@ -88,12 +90,13 @@ public class GroceryDBDriver extends Thread {
 
 	public void run() 
 	{
+		Random rand = new Random();
 		int wh_id = 0;
-		int ds_id = 0;
-		int custID = 0;
-		String itemIDs = "1,2,3,4,5,6";
-		String itemQuantities = "10,10,10,10,10,10";
-		int totalItems = 60;
+		int ds_id = rand.nextInt(8);
+		int custID = rand.nextInt(100);
+		String itemIDs = Integer.toString(rand.nextInt(999));
+		String itemQuantities = "10";
+		int totalItems = 10;
 		double payAmt = 2000;
 		int stockThreshold = 150000;
 		Connection connection = null;
@@ -459,23 +462,20 @@ public class GroceryDBDriver extends Thread {
 
 		// return the sum of quantities purchased recently for items below stock
 		// threshold
-		String pQuantities = "SELECT QUANTITY FROM STOCK NATURAL JOIN (SELECT ITEM_ID, QUANTITY FROM LINEITEMS NATURAL JOIN (SELECT ORDER_ID FROM (SELECT * FROM ORDERS WHERE DS_ID = ? AND WH_ID =? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <=20)) WHERE QUANTITY_AVAILABLE < ?";
+		String pQuantities = "SELECT SUM(QUANTITY) FROM STOCK NATURAL JOIN (SELECT ITEM_ID, QUANTITY FROM LINEITEMS NATURAL JOIN (SELECT ORDER_ID FROM (SELECT * FROM ORDERS WHERE DS_ID = ? AND WH_ID =? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <=20)) WHERE QUANTITY_AVAILABLE < ?";
 		PreparedStatement qTop20 = connection.prepareStatement(pQuantities);
 		int sum = 0;
 		qTop20.setLong(1, ds_id);
 		qTop20.setLong(2, wh_id);
 		qTop20.setLong(3, stockThreshold);
 		ResultSet qRS = qTop20.executeQuery();
-		while (qRS.next()) {
-			sum = sum + qRS.getInt(1);
+		
+		while (qRS.next()) 
+		{
+			System.out.println(qRS.getInt(1) + " items were purchase recently that are below the stock threshold, "+stockThreshold+ " in warehouse "+wh_id+".");    
 		}
-
 		qRS.close();
 		qRS = null;
-		System.out.println(sum
-						+ " items were purchase recently that are below the stock threshold, "
-						+ stockThreshold + " in warehouse " + wh_id + ".");
-
 		st.executeQuery("COMMIT");
 		st.close();
 		st = null;
