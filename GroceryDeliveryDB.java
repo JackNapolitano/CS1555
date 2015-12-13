@@ -96,48 +96,13 @@ public class GroceryDeliveryDB {
 	/////////////////////////////////////////////////////
 	//////////////INITILIZATION FUNCTIONS////////////////	
 	/////////////////////////////////////////////////////
-	public static void resetDatabase() throws SQLException {
-		System.out.println("Reseting the database...");
-		String s = new String();
-		StringBuffer sb = new StringBuffer();
-
-		try {
-			FileReader f = new FileReader(new File("GroceryDB.sql"));
-
-			BufferedReader br = new BufferedReader(f);
-
-			while ((s = br.readLine()) != null) {
-				sb.append(s); // build the sql statement
-			}
-			br.close();
-
-			// split each request
-			String[] rqts = sb.toString().split(";");
-
-			if (connection != null) {
-				Statement st = connection.createStatement();
-
-				for (int i = 0; i < rqts.length; i++) {
-					if (!rqts[i].trim().equals("")) {
-						st.execute(rqts[i]);
-						// System.out.println(">>"+rqts[i]);
-					}
-				}
-			}
-		} catch (Exception e) {
-			System.out.println("Error: " + e.toString());
-			System.out.println("Error: ");
-			e.printStackTrace();
-			System.out.println(sb.toString());
-		}
-	}
 	public static void genDB() throws SQLException {
 		System.out.println("Creating the database...");
 		String s = new String();
 		StringBuffer sb = new StringBuffer();
 
 		try {
-			FileReader f = new FileReader(new File("GroceryDB1.sql"));
+			FileReader f = new FileReader(new File("GroceryDB.sql"));
 
 			BufferedReader br = new BufferedReader(f);
 
@@ -226,15 +191,10 @@ public class GroceryDeliveryDB {
 		ps = null;
 	}
 	//THIS IS THE FUNCTION WHERE YOU SET QUANTITES OF DATA GENERATION
-	public static void GenData() {
-		// create tables from .sql file
-		try {
-			resetDatabase();
-			System.out.println("Creating the database...");
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public static void GenData() throws SQLException, ClassNotFoundException
+	{
+		dropTables();
+		genDB();
 
 		// gen the data for the db
 		try {
@@ -249,29 +209,37 @@ public class GroceryDeliveryDB {
 			System.out.println("Generating data for the database... (takes a few minutes)");
 			System.out.println("Generating items...");
 			GenItemData(1000);// 1000 unique grocery items
+			System.out.println("\tDone.");
 			System.out.println("Generating warehouse...");
 			GenWarehouseData(1); // number of warehouses
+			System.out.println("\tDone.");
 			System.out.println("Generating stock entries...");
 			GenStockData(1000, 1);
+			System.out.println("\tDone.");
 			System.out.println("Generating distribution stations...");
 			GenDistStationData(8);// 8 DS per HW
+			System.out.println("\tDone.");
 			System.out.println("Generating customers...");
 			GenCustomerData(10);// 100 customers per DS
+			System.out.println("\tDone.");
 			System.out.println("Generating orders and line items...");
-			GenOrderData(50);// between 1-50 orders per cust3
+			GenOrderData(50);// between 1-50 orders per cust
+			System.out.println("\tDone.");
 
-			System.out.println("Updating data to reflect sales... (sales sum, num deliveries, etc..)");
-			//DATA CONSISTENCY BELOW
-			//updateCustData();
-			//updateDSData();
-			//updateWHData();
-			//updateStockData();
-
-
+			System.out.println("Updating all data in DB for Data Consistency..");
+			//DATA CONSISTENCY for post data gen (functions below)
+			updateCustData(); //works perfectly
+			updateDSData(); //works perfectly
+			updateWHData(); //works perfectly
+			updateStockData(); //works perfectly
+			System.out.println("\tDone.");
+			//all other data consistency is done within the transactions without triggers
 
 			//data consistancy is done without triggers because I hate them
 			//in each transaction, data consistencey is manually done.
 			//triggers suck.
+			
+
 			//DATA CONSISTENCY NOTES
 			
 			//NEW ORDER TRANSACTION MUST UPDATE:
@@ -300,8 +268,6 @@ public class GroceryDeliveryDB {
 			e.printStackTrace();
 		}
 	}
-
-
 
 	/////////////////////////////////////////////////////
 	//////////////////TRANSACTIONS///////////////////////	
@@ -967,6 +933,144 @@ public class GroceryDeliveryDB {
 			}
 		}
 	}
+	public static void GenOrderData(int numOrders) throws SQLException {
+		Random rand = new Random();
+		int wh_ID;
+		int ds_ID;
+		int cust_ID;
+		int order_ID;
+		int num_Items;
+		int num = 0;
+		for (int w = 0; w < warehouses; w++) 
+		{
+			for (int x = 0; x < distPerWarehouse; x++) 
+			{
+				for (int y = 0; y < custPerDist; y++)
+				{
+					int numOrd = rand.nextInt(numOrders) + 1; // generates a
+																// number of
+																// orders from
+																// 1-100 for
+																// each cust
+					for (int z = 0; z < numOrd; z++) {
+						wh_ID = w;
+						ds_ID = x;
+						cust_ID = y;
+						order_ID = z;
+						String date_Placed = generateDate();
+						String completed_Flag = "Completed";
+						num_Items = rand.nextInt(80);
+						String insQuery = ("INSERT INTO Orders VALUES (?,?,?,?,?,?,?)");
+						PreparedStatement ps = connection
+								.prepareStatement(insQuery);
+						ps.setLong(1, wh_ID);
+						ps.setLong(2, ds_ID);
+						ps.setLong(3, cust_ID);
+						ps.setLong(4, order_ID);
+						ps.setString(5, date_Placed);
+						ps.setString(6, completed_Flag);
+						ps.setLong(7, num_Items);
+						ps.executeUpdate();
+						ps.close();
+						ps = null;
+						int numLItems = rand.nextInt(8) + 4; 	// generates
+																// random
+																// number
+																// of
+																// line
+																// items
+																// 1-15
+						for (int a = 0; a < numLItems; a++) {
+							// generate the data
+							wh_ID = w;
+							ds_ID = x;
+							cust_ID = y;
+							order_ID = z;
+							int li_ID = a;
+							int item_ID = rand.nextInt(1000);
+							int quantity = rand.nextInt(70)+1;
+							int total_Cost = rand.nextInt(2000);
+							String date_Delivered = generateDate();
+							// do a sql insert here using the JDBC
+							String insLIQuery = ("INSERT INTO LineItems VALUES (?,?,?,?,?,?,?,?,?)");
+							PreparedStatement psLI = connection
+									.prepareStatement(insLIQuery);
+							psLI.setLong(1, wh_ID);
+							psLI.setLong(2, ds_ID);
+							psLI.setLong(3, cust_ID);
+							psLI.setLong(4, order_ID);
+							psLI.setLong(5, li_ID);
+							psLI.setLong(6, item_ID);
+							psLI.setLong(7, quantity);
+							psLI.setLong(8, total_Cost);
+							psLI.setString(9, date_Delivered);
+							psLI.executeUpdate();
+							psLI.close();
+							psLI = null;
+						}
+
+					}
+				}
+				num = x+1;
+				System.out.println("\tData for Distribution Station " + (x+1) + " of " + distPerWarehouse + " generated.");
+			}
+		}
+	}
+	public static void GenItemData(int numItems) throws SQLException {
+		Random rand = new Random();
+		int item_ID;
+		float price; // Also needs a function to generate dollars and cents
+		for (int x = 0; x < numItems; x++) {
+			// generate the data
+			item_ID = x;
+			String item_Name = generateString(15);
+			int dollars = rand.nextInt(90000) + 1000;
+			int cents = rand.nextInt(90) + 10;
+			String priceString = dollars + "." + cents;
+			price = Float.parseFloat(priceString);
+			// do a sql insert here using the JDBC
+			String insQuery = ("INSERT INTO Items VALUES (?,?,?)");
+			PreparedStatement ps = connection.prepareStatement(insQuery);
+			ps.setLong(1, item_ID);
+			ps.setString(2, item_Name);
+			ps.setFloat(3, price);
+			ps.executeUpdate();
+			ps.close();
+			ps = null;
+		}
+	}
+	public static void GenStockData(int numItems, int warehouseCount) throws SQLException {
+		Random rand = new Random();
+		int wh_ID;
+		int item_ID;
+		int quantity_avail;
+		int quantity_sold;
+		int num_orders;
+		for (int x = 0; x < warehouseCount; x++) {
+			for (int y = 0; y < numItems; y++) {
+				// generate the data
+				wh_ID = x;
+				item_ID = y;
+				quantity_avail = rand.nextInt(100000)+100000;
+				quantity_sold = 0;
+				num_orders = 0;
+				// do a sql insert here using the JDBC
+				String insQuery = ("INSERT INTO Stock VALUES (?,?,?,?,?)");
+				PreparedStatement ps = connection.prepareStatement(insQuery);
+				ps.setLong(1, wh_ID);
+				ps.setLong(2, item_ID);
+				ps.setLong(3, quantity_avail);
+				ps.setLong(4, quantity_sold);
+				ps.setLong(5, num_orders);
+				ps.executeUpdate();
+				ps.close();
+				ps = null;
+			}
+		}
+	}
+	/////////////////////////////////////////////////////
+	/////////////DATA CONSISTENCY FUNCTIONS//////////////	
+	/////////////////////////////////////////////////////
 	public static void updateCustData() throws SQLException {
 		Scanner read = new Scanner(System.in);
 		Statement st = connection.createStatement();
@@ -977,7 +1081,7 @@ public class GroceryDeliveryDB {
 		ResultSetMetaData rsmd = resultSet.getMetaData();
 		int columnsNumber = rsmd.getColumnCount();
 		while (resultSet.next()) {
-			// update order
+			// update Cust Data
 			int wh_id = resultSet.getInt(1);
 			int ds_ID = resultSet.getInt(2);
 			int custID = resultSet.getInt(3);
@@ -1107,196 +1211,36 @@ public class GroceryDeliveryDB {
 		ps.close();
 		ps = null;
 	}
-	//something is broken in here
 	public static void updateStockData() throws SQLException {
 		Scanner read = new Scanner(System.in);
 		Statement st = connection.createStatement();
+		int wh_id = 0;
 		st.executeUpdate("SET TRANSACTION READ WRITE");
-		String selectQuery = ("SELECT * FROM LINEITEMS");
+		String selectQuery = ("SELECT ITEM_ID, COUNT(ORDER_ID) as \"Number of orders\", SUM(QUANTITY) as \"Number Sold\" FROM LINEITEMS WHERE WH_ID = ? GROUP BY ITEM_ID ORDER BY ITEM_ID ASC");
 		PreparedStatement ps = connection.prepareStatement(selectQuery);		
+		ps.setLong(1, wh_id);
 		ResultSet resultSet = ps.executeQuery();
-		ResultSetMetaData rsmd = resultSet.getMetaData();
-		int columnsNumber = rsmd.getColumnCount();
-		while (resultSet.next()) {
-			// update order
-			int wh_id = resultSet.getInt(1);
-			int ds_ID = resultSet.getInt(2);
-			int custID = resultSet.getInt(3);
-			int order_ID = resultSet.getInt(4);
-			int li_ID = resultSet.getInt(5);
-
-			String selectQuery3 = ("SELECT SUM(QUANTITY) as SUMSUM, ITEM_ID FROM LINEITEMS WHERE WH_ID = ? GROUP BY ITEM_ID");
-			PreparedStatement ps3 = connection.prepareStatement(selectQuery3);		
-			ps3.setLong(1, wh_id);
-			ResultSet resultSet3 = ps3.executeQuery();
-			while (resultSet3.next()) {
-
-
-				long itemID = resultSet3.getLong(2);
-				long qSold = resultSet3.getLong(1);
-
-				String selectQuery4 = ("SELECT QUANTITY_AVAILABLE, QUANTITY_SOLD FROM STOCK WHERE WH_ID = ? AND ITEM_ID = ?");
-				PreparedStatement ps4 = connection.prepareStatement(selectQuery4);		
-				ps4.setLong(1, wh_id);
-				ps4.setLong(2, itemID);
-				ResultSet resultSet4 = ps4.executeQuery();
-				if(resultSet4 != null)
-				{
-					resultSet4.next();
-					long qA = resultSet4.getLong(1);
-
-					String updateSQuery = ("UPDATE STOCK SET QUANTITY_AVAILABLE = ?, QUANTITY_SOLD = ? WHERE WH_ID=? AND ITEM_ID = ?");
-					PreparedStatement updateS = connection.prepareStatement(updateSQuery);
-					updateS.setDouble(1, qA - qSold);
-					updateS.setDouble(2, qSold);
-					updateS.setLong(3, wh_id);
-					updateS.setLong(4, itemID);
-					updateS.executeUpdate();
-					updateS.close();
-					updateS = null;
-				}
-				ps4.close();
-				ps4 = null;
-			}
-			ps3.close();
-			ps3 = null;
-
+		while (resultSet.next())
+		{
+			long itemID = resultSet.getLong(1);
+			long numOrders = resultSet.getLong(2);
+			long qSold = resultSet.getLong(3);
+			String updateSQuery = ("UPDATE STOCK SET QUANTITY_AVAILABLE = QUANTITY_AVAILABLE - ? , QUANTITY_SOLD = QUANTITY_SOLD + ?, NUM_ORDERS = NUM_ORDERS + ? WHERE WH_ID = ? AND ITEM_ID = ?");
+			PreparedStatement updateS = connection.prepareStatement(updateSQuery);
+			updateS.setDouble(1, qSold);
+			updateS.setDouble(2, qSold);
+			updateS.setDouble(3, numOrders);
+			updateS.setLong(4, wh_id);
+			updateS.setLong(5, itemID);
+			updateS.executeUpdate();
+			updateS.close();
+			updateS = null;
 		}
+		ps.close();
+		ps = null;
 		st.executeUpdate("COMMIT");
 		st.close();
 		st = null;
-		ps.close();
-		ps = null;
-	}
-	public static void GenOrderData(int numOrders) throws SQLException {
-		Random rand = new Random();
-		int wh_ID;
-		int ds_ID;
-		int cust_ID;
-		int order_ID;
-		int num_Items;
-		for (int w = 0; w < warehouses; w++) {
-			for (int x = 0; x < distPerWarehouse; x++) {
-				for (int y = 0; y < custPerDist; y++) {
-					System.out.println("Customer " + y);
-					int numOrd = rand.nextInt(numOrders) + 1; // generates a
-																// number of
-																// orders from
-																// 1-100 for
-																// each cust
-					for (int z = 0; z < numOrd; z++) {
-						wh_ID = w;
-						ds_ID = x;
-						cust_ID = y;
-						order_ID = z;
-						String date_Placed = generateDate();
-						String completed_Flag = "Completed";
-						num_Items = rand.nextInt(80);
-						String insQuery = ("INSERT INTO Orders VALUES (?,?,?,?,?,?,?)");
-						PreparedStatement ps = connection
-								.prepareStatement(insQuery);
-						ps.setLong(1, wh_ID);
-						ps.setLong(2, ds_ID);
-						ps.setLong(3, cust_ID);
-						ps.setLong(4, order_ID);
-						ps.setString(5, date_Placed);
-						ps.setString(6, completed_Flag);
-						ps.setLong(7, num_Items);
-						ps.executeUpdate();
-						ps.close();
-						ps = null;
-						int numLItems = rand.nextInt((15 - 5) + 1) + 5; // generates
-																		// random
-																		// number
-																		// of
-																		// line
-																		// items
-																		// 1-15
-						for (int a = 0; a < numLItems; a++) {
-							// generate the data
-							wh_ID = w;
-							ds_ID = x;
-							cust_ID = y;
-							order_ID = z;
-							int li_ID = a;
-							int item_ID = rand.nextInt(30);
-							int quantity = rand.nextInt(3000);
-							int total_Cost = rand.nextInt(2000);
-							String date_Delivered = generateDate();
-							// do a sql insert here using the JDBC
-							String insLIQuery = ("INSERT INTO LineItems VALUES (?,?,?,?,?,?,?,?,?)");
-							PreparedStatement psLI = connection
-									.prepareStatement(insLIQuery);
-							psLI.setLong(1, wh_ID);
-							psLI.setLong(2, ds_ID);
-							psLI.setLong(3, cust_ID);
-							psLI.setLong(4, order_ID);
-							psLI.setLong(5, li_ID);
-							psLI.setLong(6, item_ID);
-							psLI.setLong(7, quantity);
-							psLI.setLong(8, total_Cost);
-							psLI.setString(9, date_Delivered);
-							psLI.executeUpdate();
-							psLI.close();
-							psLI = null;
-						}
-
-					}
-				}
-			}
-		}
-	}
-	public static void GenItemData(int numItems) throws SQLException {
-		Random rand = new Random();
-		int item_ID;
-		float price; // Also needs a function to generate dollars and cents
-		for (int x = 0; x < numItems; x++) {
-			// generate the data
-			item_ID = x;
-			String item_Name = generateString(15);
-			int dollars = rand.nextInt(90000) + 1000;
-			int cents = rand.nextInt(90) + 10;
-			String priceString = dollars + "." + cents;
-			price = Float.parseFloat(priceString);
-			// do a sql insert here using the JDBC
-			String insQuery = ("INSERT INTO Items VALUES (?,?,?)");
-			PreparedStatement ps = connection.prepareStatement(insQuery);
-			ps.setLong(1, item_ID);
-			ps.setString(2, item_Name);
-			ps.setFloat(3, price);
-			ps.executeUpdate();
-			ps.close();
-			ps = null;
-		}
-	}
-	public static void GenStockData(int numItems, int warehouseCount) throws SQLException {
-		Random rand = new Random();
-		int wh_ID;
-		int item_ID;
-		int quantity_avail;
-		int quantity_sold;
-		int num_orders;
-		for (int x = 0; x < warehouseCount; x++) {
-			for (int y = 0; y < numItems; y++) {
-				// generate the data
-				wh_ID = x;
-				item_ID = y;
-				quantity_avail = rand.nextInt(5000);
-				quantity_sold = 0;
-				num_orders = rand.nextInt(20000);
-				// do a sql insert here using the JDBC
-				String insQuery = ("INSERT INTO Stock VALUES (?,?,?,?,?)");
-				PreparedStatement ps = connection.prepareStatement(insQuery);
-				ps.setLong(1, wh_ID);
-				ps.setLong(2, item_ID);
-				ps.setLong(3, quantity_avail);
-				ps.setLong(4, quantity_sold);
-				ps.setLong(5, num_orders);
-				ps.executeUpdate();
-				ps.close();
-				ps = null;
-			}
-		}
 	}
 
 
@@ -1599,42 +1543,11 @@ public class GroceryDeliveryDB {
 		//String selectQuery = ("SELECT * FROM LINEITEMS WHERE DS_ID = 1 AND WH_ID = 0 AND CUST_ID = 9");
 		//String selectQuery = ("SELECT NUM_DELIVERIES, NUM_PAYMENTS, debt, YTD_PURCHASE_TOTAL FROM Customers WHERE WH_ID = 0 AND DS_ID = 1 AND CUST_ID = 1");
 		//String selectQuery = ("SELECT * FROM STOCK WHERE WH_ID = 0");
-		String selectQuery = ("SELECT YTD_SALES_SUM FROM WAREHOUSE WHERE WH_ID = 0");
+		String selectQuery = ("SELECT * FROM STOCK WHERE WH_ID = 0 ORDER BY ITEM_ID ASC");
 		PreparedStatement ps = connection.prepareStatement(selectQuery);		
 		ResultSet resultSet = ps.executeQuery();
 		ResultSetMetaData rsmd = resultSet.getMetaData();
 		int columnsNumber = rsmd.getColumnCount();
-		while (resultSet.next()) {
-		    for (int i = 1; i < columnsNumber+1; i++) {
-		        if (i > 1) System.out.print(",       ");
-		        String columnValue = resultSet.getString(i);
-		        System.out.print(rsmd.getColumnName(i) + " " + columnValue);
-		    }
-		    System.out.println("");
-		}
-		ps.close();
-		ps = null;
-
-		selectQuery = ("SELECT YTD_SALES_SUM FROM DISTSTATION WHERE WH_ID = 0 AND DS_ID = 1");
-		ps = connection.prepareStatement(selectQuery);		
-		resultSet = ps.executeQuery();
-		rsmd = resultSet.getMetaData();
-		columnsNumber = rsmd.getColumnCount();
-		while (resultSet.next()) {
-		    for (int i = 1; i < columnsNumber+1; i++) {
-		        if (i > 1) System.out.print(",       ");
-		        String columnValue = resultSet.getString(i);
-		        System.out.print(rsmd.getColumnName(i) + " " + columnValue);
-		    }
-		    System.out.println("");
-		}
-		ps.close();
-		ps = null;
-		selectQuery = ("SELECT debt FROM customers WHERE WH_ID = 0 AND DS_ID = 1 AND cust_ID = 1");
-		ps = connection.prepareStatement(selectQuery);		
-		resultSet = ps.executeQuery();
-		rsmd = resultSet.getMetaData();
-		columnsNumber = rsmd.getColumnCount();
 		while (resultSet.next()) {
 		    for (int i = 1; i < columnsNumber+1; i++) {
 		        if (i > 1) System.out.print(",       ");

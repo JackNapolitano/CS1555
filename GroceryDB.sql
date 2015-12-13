@@ -1,11 +1,3 @@
-DROP TABLE Stock;
-DROP TABLE LineItems;
-DROP TABLE Items;
-DROP TABLE Orders;
-DROP TABLE Customers;
-DROP TABLE DistStation;
-DROP TABLE Warehouse;
-
 CREATE TABLE Warehouse (
 
 WH_ID NUMBER(11) NOT NULL,
@@ -164,7 +156,7 @@ WH_ID NUMBER NOT NULL,
 
 Item_ID NUMBER NOT NULL,
 
-Quantity_Available NUMBER NULL,
+Quantity_Available NUMBER NULL CHECK (Quantity_Available >= 0),
 
 Quantity_Sold NUMBER NULL,
 
