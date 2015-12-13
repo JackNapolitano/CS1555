@@ -487,7 +487,7 @@ public class GroceryDeliveryDB {
 			{
 				float ytdSalesSum = ytdRS.getFloat(1);
 
-				if (payAmt >= debtAmt) {
+				if (payAmt > debtAmt) {
 					double extra = payAmt - debtAmt;
 					String updateQuery = ("UPDATE CUSTOMERS SET NUM_PAYMENTS = NUM_PAYMENTS + 1, debt = ?, YTD_PURCHASE_TOTAL = YTD_PURCHASE_TOTAL + ? WHERE CUST_ID=? AND DS_ID=?");
 					PreparedStatement prep = connection.prepareStatement(updateQuery);

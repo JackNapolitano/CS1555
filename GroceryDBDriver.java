@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class GroceryDBThread extends Thread {
+public class GroceryDBDriver extends Thread {
 	private static int numThreads = 15; // 3 threads per tx
 	// this must be changed manually here if you would like to test with a
 	// shared connection
@@ -33,37 +33,36 @@ public class GroceryDBThread extends Thread {
 		return c_nextId++;
 	}
 
-	public static void main(String args[]) {
-		try {
+	public static void main(String args[]) 
+	{
+		try 
+		{
 			if (args.length < 2) {
-				System.out
-						.println("usage $> java GroceryDBDriver <db_username> <db_password>");
+				System.out.println("usage $> java GroceryDBDriver <db_username> <db_password>");
 				System.exit(0);
 			}
 			username = args[0];
 			password = args[1];
-
-			if (share_connection) {
-				try {
-					DriverManager
-							.registerDriver(new oracle.jdbc.OracleDriver());
-					// Class.forName("oracle.jdbc.OracleDriver");
-
+			if (args.length == 3) {
+				share_connection = true;
+			}
+			if (share_connection)
+			{
+				try 
+				{
+					DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
 					String url = "jdbc:oracle:thin:@class3.cs.pitt.edu:1521:dbclass";
-
-					s_conn = DriverManager.getConnection(url, username,
-							password);
-					// System.out.println("Connection to Oracle established");
-				} catch (Exception e) {
+					s_conn = DriverManager.getConnection(url, username,password);
+				} 
+				catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 
 			Thread[] threadList = new Thread[numThreads];
-
 			int tx_count = 0;
 			for (int i = 0; i < numThreads; i++) {
-				threadList[i] = new GroceryDBThread(tx_count);
+				threadList[i] = new GroceryDBDriver(tx_count);
 				threadList[i].start();
 				if (tx_count == 4)
 					tx_count = 0;
@@ -83,7 +82,9 @@ public class GroceryDBThread extends Thread {
 				s_conn.close();
 				s_conn = null;
 			}
-		} catch (Exception e) {
+		} 
+		catch (Exception e) 
+		{
 			e.printStackTrace();
 		}
 	}
@@ -91,19 +92,13 @@ public class GroceryDBThread extends Thread {
 	public void run() {
 		try {
 			Connection connection = null;
-
 			if (share_connection)
 				connection = s_conn;
 			else {
 				try {
-					DriverManager
-							.registerDriver(new oracle.jdbc.OracleDriver());
-					// Class.forName("oracle.jdbc.OracleDriver");
-
+					DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
 					String url = "jdbc:oracle:thin:@class3.cs.pitt.edu:1521:dbclass";
-
-					connection = DriverManager.getConnection(url, username,
-							password);
+					connection = DriverManager.getConnection(url, username, password);
 					// System.out.println("Connection to Oracle established");
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -111,64 +106,72 @@ public class GroceryDBThread extends Thread {
 			}
 
 			while (!getStart()) {
+				System.out.println("here");
 				yield();
 			}
-
-			int wh_id = 1;
+			int wh_id = 0;
 			int ds_id = 0;
 			int custID = 0;
-			String itemIDs = "1,2,4,6,5,23";
-			String itemQuantities = "1,23,45,74,3,43";
-			int totalItems = 189;
+			String itemIDs = "1,2,3,4,5,6";
+			String itemQuantities = "10,10,10,10,10,10";
+			int totalItems = 60;
 			double payAmt = 2000;
-			int stockThreshold = 150;
-
-			if (connection != null) {
-				// execute the tx for that thread
-				switch (this.txID) {
+			int stockThreshold = 150000;
+			// execute the tx for that thread
+			switch (this.txID) 
+			{
 				case 0:
-					newOrder(connection, wh_id, ds_id, custID, itemIDs,
-							itemQuantities, totalItems);
+					System.out.print((this.txID+1)+" - ");
+					newOrder(connection, wh_id, ds_id, custID, itemIDs, itemQuantities, totalItems);
 					break;
 				case 1:
+					System.out.print((this.txID+1)+" - ");
 					makePayment(connection, wh_id, ds_id, custID, payAmt);
 					break;
 				case 2:
+					System.out.print((this.txID+1)+" - ");
 					checkStockLevels(connection, wh_id, ds_id, stockThreshold);
 					break;
 				case 3:
+					System.out.print((this.txID+1)+" - ");
 					deliverItems(connection, wh_id);
 					break;
 				case 4:
+					System.out.print((this.txID+1)+" - ");
 					checkOrderStatus(connection, ds_id, custID);
 					break;
-				}
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
+			System.out.println("Thread " + threadID +  " is finished. ");
+			if (connection != null) 
+			{
+				
+			}
+		} 
+		catch (Exception e) 
+		{
+			//e.printStackTrace();
+			System.out.println("Thread " + threadID + " got Exception: " + e);
+			return;
 		}
-
 	}
 
 	static boolean start = false;
-
 	static synchronized void setStart() {
 		start = true;
 	};
-
 	synchronized boolean getStart() {
 		return start;
 	};
-
-	public GroceryDBThread(int tx) {
+	public GroceryDBDriver(int tx) {
 		super();
 		threadID = getNextId();
 		txID = tx;
 	}
 
-	public static void newOrder(Connection connection, int wh_id, int ds_ID,
-			int custID, String itemIDs, String itemQuantities, int totalItems)
-			throws SQLException {
+	//TX1
+	public static void newOrder(Connection connection, int wh_id, int ds_ID, int custID, String itemIDs, String itemQuantities, int totalItems) throws SQLException 
+	{
+		System.out.println("New Order");
 		// parse itemIDs and quantities
 		itemIDs = itemIDs.replaceAll("\\s+", ""); // first remove any spaces
 		String[] items = itemIDs.split(",");
@@ -190,18 +193,16 @@ public class GroceryDBThread extends Thread {
 		}
 
 		if ((iIds.size() != iQuantities.size())) {
-			System.out
-					.println("The number of item ids and quantites must match. Please try the order again.");
+			System.out.println("The number of item ids and quantites must match. Please try the order again.");
 			return;
 		} else if (tItems != totalItems) {
-			System.out
-					.println("The total number of items and the sum of all quantities must match. Please try the order again.");
+			System.out.println("The total number of items and the sum of all quantities must match. Please try the order again.");
 			return;
 		}
 
-		// ///////////////////////////////
-		// /START OF ACTUAL TRANSACTION///
-		// ///////////////////////////////
+		/////////////////////////////////
+		///START OF ACTUAL TRANSACTION///
+		/////////////////////////////////
 		Statement st = connection.createStatement();
 		st.executeQuery("SET TRANSACTION READ WRITE");
 		// get WH_ID from Customers table
@@ -264,8 +265,7 @@ public class GroceryDBThread extends Thread {
 					}
 
 					if (price == 0) {
-						System.out
-								.println("Could not retrieve item price. Please check the item ID.");
+						System.out.println("Could not retrieve item price. Please check the item ID.");
 						return;
 					}
 
@@ -311,8 +311,8 @@ public class GroceryDBThread extends Thread {
 	}
 
 	// TX2
-	public static void makePayment(Connection connection, int wh_id, int ds_id,
-			int custID, double payAmt) throws SQLException {
+	public static void makePayment(Connection connection, int wh_id, int ds_id, int custID, double payAmt) throws SQLException {
+		System.out.println("Make Payment");
 		Statement st = connection.createStatement();
 		st.executeUpdate("SET TRANSACTION READ WRITE");
 		String selectQuery = ("SELECT * FROM CUSTOMERS WHERE CUST_ID = ? AND DS_ID = ?");
@@ -342,7 +342,7 @@ public class GroceryDBThread extends Thread {
 			while (ytdRS.next()) {
 				float ytdSalesSum = ytdRS.getFloat(1);
 
-				if (payAmt >= debtAmt) {
+				if (payAmt > debtAmt) {
 					double extra = payAmt - debtAmt;
 					String updateQuery = ("UPDATE CUSTOMERS SET NUM_PAYMENTS = NUM_PAYMENTS + 1, debt = ?, YTD_PURCHASE_TOTAL = YTD_PURCHASE_TOTAL + ? WHERE CUST_ID=? AND DS_ID=?");
 					PreparedStatement prep = connection
@@ -354,8 +354,7 @@ public class GroceryDBThread extends Thread {
 					prep.executeUpdate();
 					prep.close();
 					prep = null;
-					System.out
-							.println("A payment of $"
+					System.out.println("A payment of $"
 									+ debtAmt
 									+ " has been applied to your account and $"
 									+ extra
@@ -392,8 +391,7 @@ public class GroceryDBThread extends Thread {
 					prep.executeUpdate();
 					prep.close();
 					prep = null;
-					System.out
-							.println("A payment of $"
+					System.out.println("A payment of $"
 									+ payAmt
 									+ " has been applied to your account and your current debt is $"
 									+ newDebt + ".");
@@ -431,8 +429,8 @@ public class GroceryDBThread extends Thread {
 	// question is very ambiguous and either way the metric is not very useful
 	// due to the ambiguity of the returned result
 	// TX3
-	public static void checkStockLevels(Connection connection, int wh_id,
-			int ds_id, int stockThreshold) throws SQLException {
+	public static void checkStockLevels(Connection connection, int wh_id, int ds_id, int stockThreshold) throws SQLException {
+		System.out.println("New Order");
 		Statement st = connection.createStatement();
 		st.executeQuery("SET TRANSACTION READ WRITE");
 		// return the number of unique items sold recently that are below stock
@@ -444,9 +442,7 @@ public class GroceryDBThread extends Thread {
 		top20Orders.setLong(3, stockThreshold);
 		ResultSet rs = top20Orders.executeQuery();
 		while (rs.next()) {
-			System.out.println("There are " + rs.getLong(1)
-					+ " items in warehouse " + wh_id + " have a stock below "
-					+ stockThreshold + ".");
+			//System.out.println("There are " + rs.getLong(1) + " items in warehouse " + wh_id + " have a stock below " + stockThreshold + ".");
 		}
 
 		top20Orders.close();
@@ -467,8 +463,7 @@ public class GroceryDBThread extends Thread {
 
 		qRS.close();
 		qRS = null;
-		System.out
-				.println(sum
+		System.out.println(sum
 						+ " items were purchase recently that are below the stock threshold, "
 						+ stockThreshold + " in warehouse " + wh_id + ".");
 
@@ -478,8 +473,8 @@ public class GroceryDBThread extends Thread {
 	}
 
 	// TX4
-	public static void deliverItems(Connection connection, int wh_id)
-			throws SQLException {
+	public static void deliverItems(Connection connection, int wh_id) throws SQLException {
+		System.out.println("Deliver Tx");
 		String incomplete = "Incomplete";
 		String completed = "Completed";
 		Statement st = connection.createStatement();
@@ -586,8 +581,8 @@ public class GroceryDBThread extends Thread {
 	}
 
 	// TX5
-	public static void checkOrderStatus(Connection connection, int ds_id,
-			int custID) throws SQLException {
+	public static void checkOrderStatus(Connection connection, int ds_id, int custID) throws SQLException {
+		System.out.println("Checkk order Status");
 		Statement st = connection.createStatement();
 		st.executeUpdate("SET TRANSACTION READ WRITE");
 		String selectQuery = ("SELECT ITEM_ID, QUANTITY, TOTAL_COST, DATE_DELIVERED FROM LineItems WHERE CUST_ID = ? AND DS_ID = ? AND ORDER_ID = (SELECT ORDER_ID AS O_ID FROM (SELECT * FROM ORDERS WHERE CUST_ID = ? AND DS_ID = ? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <= 1) ORDER BY ITEM_ID ASC");
@@ -599,17 +594,16 @@ public class GroceryDBThread extends Thread {
 		ResultSet resultSet = ps.executeQuery();
 		ResultSetMetaData rsmd = resultSet.getMetaData();
 		int columnsNumber = rsmd.getColumnCount();
-		System.out.print("Customer " + custID + " from Distribution Station "
-				+ ds_id + "'s last order contained:\n");
-		while (resultSet.next()) {
-			for (int i = 1; i <= columnsNumber; i++) {
-				if (i > 1)
-					System.out.print(",       ");
-				String columnValue = resultSet.getString(i);
-				System.out.print(rsmd.getColumnName(i) + " " + columnValue);
-			}
-			System.out.println("");
-		}
+		//System.out.print("Customer " + custID + " from Distribution Station "+ ds_id + "'s last order contained:\n");
+		// while (resultSet.next()) {
+		// 	for (int i = 1; i <= columnsNumber; i++) {
+		// 		if (i > 1)
+		// 			System.out.print(",       ");
+		// 		String columnValue = resultSet.getString(i);
+		// 		System.out.print(rsmd.getColumnName(i) + " " + columnValue);
+		// 	}
+		// 	System.out.println("");
+		// }
 		st.executeUpdate("COMMIT");
 		st.close();
 		st = null;
