@@ -604,10 +604,7 @@ public class GroceryDeliveryDB {
 		qTop20.setLong(2, wh_id);
 		qTop20.setLong(3, stockThreshold);
 		ResultSet qRS = qTop20.executeQuery();
-		// while (qRS.next()){
-		// 	sum = sum + qRS.getInt(1);
-		// }
-		// System.out.println(sum+ " items were purchase recently that are below the stock threshold, "+stockThreshold+ " in warehouse "+wh_id+".");
+		
 		while (qRS.next()) 
 		{
 			System.out.println(qRS.getInt(1) + " items were purchase recently that are below the stock threshold, "+stockThreshold+ " in warehouse "+wh_id+".");    
