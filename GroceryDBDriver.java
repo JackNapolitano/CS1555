@@ -18,6 +18,8 @@ import java.util.Scanner;
 
 public class GroceryDBThread extends Thread {
 	private static int numThreads = 15; // 3 threads per tx
+	// this must be changed manually here if you would like to test with a
+	// shared connection
 	static boolean share_connection = false;
 	static int c_nextId = 1;
 	static Connection s_conn = null;
@@ -40,6 +42,22 @@ public class GroceryDBThread extends Thread {
 			}
 			username = args[0];
 			password = args[1];
+
+			if (share_connection) {
+				try {
+					DriverManager
+							.registerDriver(new oracle.jdbc.OracleDriver());
+					// Class.forName("oracle.jdbc.OracleDriver");
+
+					String url = "jdbc:oracle:thin:@class3.cs.pitt.edu:1521:dbclass";
+
+					s_conn = DriverManager.getConnection(url, username,
+							password);
+					// System.out.println("Connection to Oracle established");
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 
 			Thread[] threadList = new Thread[numThreads];
 
@@ -71,35 +89,63 @@ public class GroceryDBThread extends Thread {
 	}
 
 	public void run() {
-		Connection connection = null;
 		try {
-			DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
-			// Class.forName("oracle.jdbc.OracleDriver");
+			Connection connection = null;
 
-			String url = "jdbc:oracle:thin:@class3.cs.pitt.edu:1521:dbclass";
+			if (share_connection)
+				connection = s_conn;
+			else {
+				try {
+					DriverManager
+							.registerDriver(new oracle.jdbc.OracleDriver());
+					// Class.forName("oracle.jdbc.OracleDriver");
 
-			connection = DriverManager.getConnection(url, username, password);
-			//System.out.println("Connection to Oracle established");
+					String url = "jdbc:oracle:thin:@class3.cs.pitt.edu:1521:dbclass";
+
+					connection = DriverManager.getConnection(url, username,
+							password);
+					// System.out.println("Connection to Oracle established");
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+
+			while (!getStart()) {
+				yield();
+			}
+
+			int wh_id = 1;
+			int ds_id = 0;
+			int custID = 0;
+			String itemIDs = "1,2,4,6,5,23";
+			String itemQuantities = "1,23,45,74,3,43";
+			int totalItems = 189;
+			double payAmt = 2000;
+			int stockThreshold = 150;
+
+			if (connection != null) {
+				// execute the tx for that thread
+				switch (this.txID) {
+				case 0:
+					newOrder(connection, wh_id, ds_id, custID, itemIDs,
+							itemQuantities, totalItems);
+					break;
+				case 1:
+					makePayment(connection, wh_id, ds_id, custID, payAmt);
+					break;
+				case 2:
+					checkStockLevels(connection, wh_id, ds_id, stockThreshold);
+					break;
+				case 3:
+					deliverItems(connection, wh_id);
+					break;
+				case 4:
+					checkOrderStatus(connection, ds_id, custID);
+					break;
+				}
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-
-		while (!getStart()) {
-			yield();
-		}
-
-		// execute the tx for that thread
-		switch (this.txID) {
-		case 0:
-			break;
-		case 1:
-			break;
-		case 2:
-			break;
-		case 3:
-			break;
-		case 4:
-			break;
 		}
 
 	}
