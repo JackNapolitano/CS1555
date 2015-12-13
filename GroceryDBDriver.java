@@ -27,7 +27,6 @@ public class GroceryDBDriver extends Thread {
 	static String password = "";
 
 	int threadID;
-	int txID; // transactions IDed in same order as on M2 assignment pdf
 
 	synchronized static int getNextId() {
 		return c_nextId++;
@@ -38,13 +37,14 @@ public class GroceryDBDriver extends Thread {
 		try 
 		{
 			if (args.length < 2) {
-				System.out.println("usage $> java GroceryDBDriver <db_username> <db_password>");
+				System.out.println("usage $> java GroceryDBDriver <db_username> <db_password> \"share\"");
 				System.exit(0);
 			}
 			username = args[0];
 			password = args[1];
 			if (args.length == 3) {
-				share_connection = true;
+				if(args[2] == "share")
+					share_connection = true;
 			}
 			if (share_connection)
 			{
@@ -60,14 +60,11 @@ public class GroceryDBDriver extends Thread {
 			}
 
 			Thread[] threadList = new Thread[numThreads];
-			int tx_count = 0;
-			for (int i = 0; i < numThreads; i++) {
-				threadList[i] = new GroceryDBDriver(tx_count);
+
+			for (int i = 0; i < numThreads; i++) 
+			{
+				threadList[i] = new GroceryDBDriver();
 				threadList[i].start();
-				if (tx_count == 4)
-					tx_count = 0;
-				else
-					tx_count++;
 			}
 
 			// start all at same time
@@ -89,63 +86,79 @@ public class GroceryDBDriver extends Thread {
 		}
 	}
 
-	public void run() {
-		try {
-			Connection connection = null;
+	public void run() 
+	{
+		int wh_id = 0;
+		int ds_id = 0;
+		int custID = 0;
+		String itemIDs = "1,2,3,4,5,6";
+		String itemQuantities = "10,10,10,10,10,10";
+		int totalItems = 60;
+		double payAmt = 2000;
+		int stockThreshold = 150000;
+		Connection connection = null;
+		try 
+		{
 			if (share_connection)
 				connection = s_conn;
-			else {
-				try {
+			else 
+			{
+				try 
+				{
 					DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
 					String url = "jdbc:oracle:thin:@class3.cs.pitt.edu:1521:dbclass";
 					connection = DriverManager.getConnection(url, username, password);
 					// System.out.println("Connection to Oracle established");
-				} catch (Exception e) {
+				} 
+				catch (Exception e) 
+				{
 					e.printStackTrace();
 				}
 			}
 
 			while (!getStart()) {
-				System.out.println("here");
 				yield();
 			}
-			int wh_id = 0;
-			int ds_id = 0;
-			int custID = 0;
-			String itemIDs = "1,2,3,4,5,6";
-			String itemQuantities = "10,10,10,10,10,10";
-			int totalItems = 60;
-			double payAmt = 2000;
-			int stockThreshold = 150000;
 			// execute the tx for that thread
-			switch (this.txID) 
+			switch (threadID) 
 			{
-				case 0:
-					System.out.print((this.txID+1)+" - ");
+				case 1:
+				case 6:
+				case 11:
+					System.out.println("Start Thread: "+ threadID+ " - New Order TX");
 					newOrder(connection, wh_id, ds_id, custID, itemIDs, itemQuantities, totalItems);
 					break;
-				case 1:
-					System.out.print((this.txID+1)+" - ");
+				case 2:
+				case 7:
+				case 12:
+					System.out.println("Start Thread: "+ threadID+ " - Make Payment TX");
 					makePayment(connection, wh_id, ds_id, custID, payAmt);
 					break;
-				case 2:
-					System.out.print((this.txID+1)+" - ");
+				case 3:
+				case 8:
+				case 13:
+					System.out.println("Start Thread: "+ threadID+ " - Check Stock TX");
 					checkStockLevels(connection, wh_id, ds_id, stockThreshold);
 					break;
-				case 3:
-					System.out.print((this.txID+1)+" - ");
+				case 4:
+				case 9:
+				case 14:
+					System.out.println("Start Thread: "+ threadID+ " - Deliver Items TX");
 					deliverItems(connection, wh_id);
 					break;
-				case 4:
-					System.out.print((this.txID+1)+" - ");
+				case 5:
+				case 10:
+				case 15:
+					System.out.println("Start Thread: "+ threadID+ " - Order Status TX");
 					checkOrderStatus(connection, ds_id, custID);
 					break;
 			}
-			System.out.println("Thread " + threadID +  " is finished. ");
-			if (connection != null) 
+			if ((!share_connection) && (connection != null))
 			{
-				
+				connection.close();
+				connection = null;
 			}
+			System.out.println("Thread " + threadID +  " is finished. ");
 		} 
 		catch (Exception e) 
 		{
@@ -162,16 +175,14 @@ public class GroceryDBDriver extends Thread {
 	synchronized boolean getStart() {
 		return start;
 	};
-	public GroceryDBDriver(int tx) {
+	public GroceryDBDriver() {
 		super();
 		threadID = getNextId();
-		txID = tx;
 	}
 
 	//TX1
 	public static void newOrder(Connection connection, int wh_id, int ds_ID, int custID, String itemIDs, String itemQuantities, int totalItems) throws SQLException 
 	{
-		System.out.println("New Order");
 		// parse itemIDs and quantities
 		itemIDs = itemIDs.replaceAll("\\s+", ""); // first remove any spaces
 		String[] items = itemIDs.split(",");
@@ -311,8 +322,8 @@ public class GroceryDBDriver extends Thread {
 	}
 
 	// TX2
-	public static void makePayment(Connection connection, int wh_id, int ds_id, int custID, double payAmt) throws SQLException {
-		System.out.println("Make Payment");
+	public static void makePayment(Connection connection, int wh_id, int ds_id, int custID, double payAmt) throws SQLException 
+	{
 		Statement st = connection.createStatement();
 		st.executeUpdate("SET TRANSACTION READ WRITE");
 		String selectQuery = ("SELECT * FROM CUSTOMERS WHERE CUST_ID = ? AND DS_ID = ?");
@@ -426,11 +437,9 @@ public class GroceryDBDriver extends Thread {
 		st = null;
 	}
 
-	// question is very ambiguous and either way the metric is not very useful
-	// due to the ambiguity of the returned result
 	// TX3
-	public static void checkStockLevels(Connection connection, int wh_id, int ds_id, int stockThreshold) throws SQLException {
-		System.out.println("New Order");
+	public static void checkStockLevels(Connection connection, int wh_id, int ds_id, int stockThreshold) throws SQLException 
+	{
 		Statement st = connection.createStatement();
 		st.executeQuery("SET TRANSACTION READ WRITE");
 		// return the number of unique items sold recently that are below stock
@@ -473,8 +482,8 @@ public class GroceryDBDriver extends Thread {
 	}
 
 	// TX4
-	public static void deliverItems(Connection connection, int wh_id) throws SQLException {
-		System.out.println("Deliver Tx");
+	public static void deliverItems(Connection connection, int wh_id) throws SQLException 
+	{
 		String incomplete = "Incomplete";
 		String completed = "Completed";
 		Statement st = connection.createStatement();
@@ -486,7 +495,8 @@ public class GroceryDBDriver extends Thread {
 		ResultSet resultSet = ps.executeQuery();
 		ResultSetMetaData rsmd = resultSet.getMetaData();
 		int columnsNumber = rsmd.getColumnCount();
-		while (resultSet.next()) {
+		while (resultSet.next())
+		{
 			// update order
 			int custID = resultSet.getInt(2);
 			int ds_ID = resultSet.getInt(1);
@@ -581,8 +591,8 @@ public class GroceryDBDriver extends Thread {
 	}
 
 	// TX5
-	public static void checkOrderStatus(Connection connection, int ds_id, int custID) throws SQLException {
-		System.out.println("Checkk order Status");
+	public static void checkOrderStatus(Connection connection, int ds_id, int custID) throws SQLException 
+	{
 		Statement st = connection.createStatement();
 		st.executeUpdate("SET TRANSACTION READ WRITE");
 		String selectQuery = ("SELECT ITEM_ID, QUANTITY, TOTAL_COST, DATE_DELIVERED FROM LineItems WHERE CUST_ID = ? AND DS_ID = ? AND ORDER_ID = (SELECT ORDER_ID AS O_ID FROM (SELECT * FROM ORDERS WHERE CUST_ID = ? AND DS_ID = ? ORDER BY DATE_PLACED DESC) WHERE ROWNUM <= 1) ORDER BY ITEM_ID ASC");
