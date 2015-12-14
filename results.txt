@@ -13,3 +13,32 @@ sys     0m0.340s
 real    0m3.503s
 user    0m6.860s
 sys     0m0.380s
+
+real    0m3.509s
+user    0m6.760s
+sys     0m0.250s
+
+real    0m3.505s
+user    0m6.650s
+sys     0m0.280s
+
+real    0m3.425s
+user    0m6.500s
+sys     0m0.470s
+
+real    0m3.420s
+user    0m6.840s
+sys     0m0.370s
+
+real    0m3.460s
+user    0m6.770s
+sys     0m0.350s
+
+real    0m4.589s
+user    0m6.920s
+sys     0m0.320s
+
+AVERAGES OF 10 RUNS:
+real    0m3.579s
+user    0m6.759s
+sys     0m0.351s
